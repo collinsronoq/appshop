@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: shopping_test
+          POSTGRES_USER: shopping
+          POSTGRES_PASSWORD: shopping
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shopping -d shopping_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ENV: test
+      DATABASE_URL: postgresql+asyncpg://shopping:shopping@localhost:5432/shopping_test
+      MIGRATION_DATABASE_URL: postgresql+psycopg://shopping:shopping@localhost:5432/shopping_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install backend
+        working-directory: backend
+        run: uv sync --dev
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check .
+      - name: Type check
+        working-directory: backend
+        run: uv run mypy app
+      - name: Migrate
+        working-directory: backend
+        run: uv run alembic upgrade head
+      - name: Verify single migration head
+        working-directory: backend
+        run: test "$(uv run alembic heads | wc -l)" -eq 1
+      - name: Test
+        working-directory: backend
+        run: uv run pytest
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: npm install
+      - name: Expo dependency check
+        working-directory: apps/mobile
+        run: npx expo install --check
+      - name: Lint
+        working-directory: apps/mobile
+        run: npm run lint
+      - name: Type check
+        working-directory: apps/mobile
+        run: npm run typecheck
+      - name: Test
+        working-directory: apps/mobile
+        run: npm run test

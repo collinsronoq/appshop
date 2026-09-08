@@ -1,0 +1,1 @@
+"""Household Shopping Assistant API."""

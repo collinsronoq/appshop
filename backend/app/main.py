@@ -1,0 +1,32 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+
+from app.api.health import router as health_router
+from app.auth.router import me_router
+from app.auth.router import router as auth_router
+from app.core.database import get_engine
+from app.core.errors import ApiError, api_error_handler, validation_error_handler
+from app.core.logging import configure_logging
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    configure_logging()
+    yield
+    if get_engine.cache_info().currsize:
+        await get_engine().dispose()
+
+
+app = FastAPI(
+    title="Household Shopping API",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+app.add_exception_handler(ApiError, api_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
+app.include_router(health_router)
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(me_router, prefix="/api/v1")

@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Household Shopping",
+    "slug": "household-shopping",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "householdshopping",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "android": {
+      "package": "com.example.householdshopping"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.householdshopping"
+    }
+  }
+}

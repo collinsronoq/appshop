@@ -1,0 +1,32 @@
+# OS / editors
+.DS_Store
+*:Zone.Identifier
+.idea/
+.vscode/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+backend/.coverage
+backend/htmlcov/
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# Local data
+*.db
+*.sqlite3
+coverage/

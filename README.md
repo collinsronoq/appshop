@@ -1,0 +1,92 @@
+# Household Shopping Assistant
+
+Collaborative household shopping and purchasing-memory application.
+
+## Stack
+
+- Mobile: React Native, Expo SDK 57, TypeScript, Expo Router
+- Backend: FastAPI, SQLAlchemy async, Alembic, PostgreSQL
+- Realtime: WebSocket (implemented in a later unit)
+- Storage: S3-compatible abstraction (implemented in a later unit)
+
+## Repository
+
+```text
+apps/mobile/     Expo mobile application
+backend/         FastAPI API and migrations
+docs/            Product and engineering contracts
+.github/         CI workflows
+```
+
+## Prerequisites
+
+- Node.js >= 22.13
+- Python >= 3.12
+- uv
+- Docker + Docker Compose
+
+## Local backend
+
+```bash
+cp .env.example .env
+docker compose up -d postgres
+cd backend
+uv sync --dev
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
+```
+
+Health endpoints:
+
+- `GET http://localhost:8000/health/live`
+- `GET http://localhost:8000/health/ready`
+
+Authentication endpoints under `http://localhost:8000/api/v1`:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /me`
+
+Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
+are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
+of at least 32 characters; the example development value is rejected in staging and production.
+
+## Local mobile app
+
+```bash
+cd apps/mobile
+npm install
+npm run start
+```
+
+For a physical device, set `EXPO_PUBLIC_API_BASE_URL` to the development computer's LAN-accessible API URL rather than `localhost`.
+
+## Quality checks
+
+Backend:
+
+```bash
+cd backend
+uv run ruff check .
+uv run mypy app
+uv run pytest
+```
+
+Mobile:
+
+```bash
+cd apps/mobile
+npm run lint
+npm run typecheck
+npm run test
+```
+
+## Scope
+
+Unit 1 adds the complete authentication lifecycle and the mobile authenticated/unauthenticated
+routing shell. Household and shopping-domain functionality intentionally begins in Unit 2.
+
+See `docs/11-implementation-plan.md` for the full implementation sequence.
+See `docs/14-authentication.md` for the implemented authentication design.
