@@ -1,0 +1,1 @@
+"""Household product catalogue domain."""

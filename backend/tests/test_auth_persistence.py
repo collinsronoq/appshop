@@ -20,7 +20,7 @@ async def test_migration_is_at_single_unit_1_head(
         current_heads = await connection.run_sync(
             lambda sync_connection: MigrationContext.configure(sync_connection).get_current_heads()
         )
-    assert current_heads == ("0003_households",)
+    assert current_heads == ("0004_household_products",)
 
 
 async def test_database_enforces_unique_normalized_email(

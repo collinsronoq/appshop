@@ -20,5 +20,6 @@ Recommended reading order:
 14. `13-unit-0-baseline.md`
 15. `14-authentication.md`
 16. `15-households-membership.md`
+17. `16-household-products.md`
 
 The implementation plan is designed to be executed unit by unit with Codex.

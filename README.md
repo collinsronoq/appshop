@@ -52,6 +52,9 @@ Authentication endpoints under `http://localhost:8000/api/v1`:
 Household endpoints are under `/api/v1/households`; invitation acceptance is
 `POST /api/v1/invitations/{token}/accept`.
 
+The product catalogue is available under `/api/v1/households/{household_id}/products` and
+uses seeded categories from `/api/v1/product-categories`.
+
 Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
 are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
 of at least 32 characters; the example development value is rejected in staging and production.
@@ -88,8 +91,8 @@ npm run test
 
 ## Scope
 
-Unit 2 adds household creation, membership authorization, owner invitations, acceptance, and the
-mobile household onboarding/switcher/member flow. Shopping-domain functionality begins later.
+Unit 3 adds the household product catalogue, categories, archive semantics, substitutes, and
+bounded local image uploads. Shopping lists and trips remain future units.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.

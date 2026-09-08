@@ -12,7 +12,8 @@ import { LoginScreen } from "../screens/login-screen";
 import { RegisterScreen } from "../screens/register-screen";
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn() })
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useLocalSearchParams: () => ({})
 }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(async () => null),

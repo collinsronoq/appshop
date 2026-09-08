@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_TTL_MINUTES: int = Field(default=15, ge=1, le=60)
     REFRESH_TOKEN_TTL_DAYS: int = Field(default=30, ge=1, le=365)
     HOUSEHOLD_INVITE_TTL_DAYS: int = Field(default=7, ge=1, le=30)
+    STORAGE_BACKEND: Literal["local", "s3"] = "local"
+    LOCAL_STORAGE_ROOT: str = "./storage"
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> Self:
