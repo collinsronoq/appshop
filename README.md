@@ -58,6 +58,9 @@ uses seeded categories from `/api/v1/product-categories`.
 Shopping lists are available under `/api/v1/households/{household_id}/shopping-lists`; list items
 preserve product identity snapshots when products are later edited.
 
+Active list detail screens use `/api/v1/realtime` for process-local committed-change notifications;
+HTTP remains the canonical mutation transport.
+
 Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
 are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
 of at least 32 characters; the example development value is rejected in staging and production.

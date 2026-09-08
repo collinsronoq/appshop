@@ -95,17 +95,21 @@ async def get_list(
 async def rename_list(
     list_id: UUID,
     payload: ListPatch,
+    user: CurrentUser,
     access: HouseholdAccessDependency,
     service: ShoppingServiceDependency,
 ):
-    return detail(await service.rename(access.household.id, list_id, payload.name))
+    return detail(await service.rename(access.household.id, list_id, payload.name, user.id))
 
 
 @router.delete("/households/{household_id}/shopping-lists/{list_id}", response_model=ListDetail)
 async def archive_list(
-    list_id: UUID, access: HouseholdAccessDependency, service: ShoppingServiceDependency
+    list_id: UUID,
+    user: CurrentUser,
+    access: HouseholdAccessDependency,
+    service: ShoppingServiceDependency,
 ):
-    return detail(await service.archive(access.household.id, list_id))
+    return detail(await service.archive(access.household.id, list_id, user.id))
 
 
 @router.post(
@@ -130,10 +134,13 @@ async def update_item(
     list_id: UUID,
     item_id: UUID,
     payload: ItemPatch,
+    user: CurrentUser,
     access: HouseholdAccessDependency,
     service: ShoppingServiceDependency,
 ):
-    return detail(await service.update_item(access.household.id, list_id, item_id, payload))
+    return detail(
+        await service.update_item(access.household.id, list_id, item_id, payload, user.id)
+    )
 
 
 @router.delete(
@@ -142,7 +149,8 @@ async def update_item(
 async def remove_item(
     list_id: UUID,
     item_id: UUID,
+    user: CurrentUser,
     access: HouseholdAccessDependency,
     service: ShoppingServiceDependency,
 ):
-    return detail(await service.remove_item(access.household.id, list_id, item_id))
+    return detail(await service.remove_item(access.household.id, list_id, item_id, user.id))

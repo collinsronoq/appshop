@@ -27,6 +27,7 @@ export interface AuthClient {
   register(input: RegisterInput): Promise<User>;
   logout(): Promise<void>;
   authenticatedRequest<T>(path: string, init?: RequestInit): Promise<T>;
+  getAccessToken?(): string | null;
 }
 
 export class AuthApiClient implements AuthClient {
@@ -94,6 +95,8 @@ export class AuthApiClient implements AuthClient {
   async authenticatedRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
     return this.requestWithAccessToken<T>(path, init, true);
   }
+
+  getAccessToken(): string | null { return this.accessToken; }
 
   private async requestWithAccessToken<T>(
     path: string,

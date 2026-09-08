@@ -1,4 +1,5 @@
 # mypy: ignore-errors
+import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -6,17 +7,39 @@ from app.auth.models import User
 from app.core.errors import ApiError
 from app.households.repository import HouseholdRepository
 from app.products.repository import ProductRepository
+from app.realtime.events import RealtimeEvent
+from app.realtime.manager import publisher
 
 from .models import ShoppingList, ShoppingListItem, ShoppingListStatus
 from .repository import ShoppingRepository
 
+logger = logging.getLogger(__name__)
+
 
 class ShoppingService:
-    def __init__(self, session):
+    def __init__(self, session, event_publisher=publisher):
         self.session = session
         self.repo = ShoppingRepository(session)
         self.households = HouseholdRepository(session)
         self.products = ProductRepository(session)
+        self.publisher = event_publisher
+
+    async def _publish(self, event_type, listing, actor_id, resource_id=None, payload=None):
+        try:
+            await self.publisher.publish(
+                RealtimeEvent(
+                    type=event_type,
+                    household_id=listing.household_id,
+                    list_id=listing.id,
+                    resource_id=resource_id,
+                    actor_id=actor_id,
+                    version=listing.version,
+                    payload=payload or {},
+                )
+            )
+        except Exception:
+            logger.warning("realtime_publish_failed", exc_info=True)
+            return
 
     async def access(self, hid: UUID, user: User):
         access = await self.households.get_access(hid, user.id)
@@ -44,25 +67,31 @@ class ShoppingService:
         await self.session.commit()
         return await self.repo.get_list(hid, listing.id)
 
-    async def rename(self, hid, lid, name):
+    async def rename(self, hid, lid, name, actor_id):
         listing = await self.require_list(hid, lid, True)
         listing.name = name
         listing.version = ShoppingList.version + 1
         await self.session.commit()
-        return await self.repo.get_list(hid, lid)
+        result = await self.repo.get_list(hid, lid)
+        await self._publish("shopping_list.updated", result, actor_id)
+        return result
 
-    async def archive(self, hid, lid):
+    async def archive(self, hid, lid, actor_id):
         listing = await self.repo.get_list(hid, lid, True)
         if not listing:
             raise ApiError(
                 status_code=404, code="SHOPPING_LIST_NOT_FOUND", message="Shopping list not found."
             )
-        if not listing.archived_at:
+        changed = not listing.archived_at
+        if changed:
             listing.archived_at = datetime.now(UTC)
             listing.status = ShoppingListStatus.ARCHIVED
             listing.version = ShoppingList.version + 1
         await self.session.commit()
-        return await self.repo.get_list(hid, lid)
+        result = await self.repo.get_list(hid, lid)
+        if changed:
+            await self._publish("shopping_list.archived", result, actor_id)
+        return result
 
     async def add_item(self, hid, lid, user, data):
         listing = await self.require_list(hid, lid, True)
@@ -129,9 +158,23 @@ class ShoppingService:
         self.repo.add_item(item)
         listing.version = ShoppingList.version + 1
         await self.session.commit()
-        return await self.repo.get_list(hid, lid)
+        result = await self.repo.get_list(hid, lid)
+        await self._publish(
+            "shopping_item.added",
+            result,
+            user.id,
+            item.id,
+            {
+                "item": {
+                    "id": str(item.id),
+                    "name": item.name_snapshot,
+                    "requested_quantity": str(item.requested_quantity),
+                }
+            },
+        )
+        return result
 
-    async def update_item(self, hid, lid, iid, data):
+    async def update_item(self, hid, lid, iid, data, actor_id):
         listing = await self.require_list(hid, lid, True)
         item = await self.repo.get_item(hid, lid, iid, True)
         if not item:
@@ -145,9 +188,11 @@ class ShoppingService:
                 setattr(item, key, value)
         listing.version = ShoppingList.version + 1
         await self.session.commit()
-        return await self.repo.get_list(hid, lid)
+        result = await self.repo.get_list(hid, lid)
+        await self._publish("shopping_item.updated", result, actor_id, iid)
+        return result
 
-    async def remove_item(self, hid, lid, iid):
+    async def remove_item(self, hid, lid, iid, actor_id):
         listing = await self.require_list(hid, lid, True)
         item = await self.repo.get_item(hid, lid, iid, True)
         if not item:
@@ -157,4 +202,6 @@ class ShoppingService:
         await self.session.delete(item)
         listing.version = ShoppingList.version + 1
         await self.session.commit()
-        return await self.repo.get_list(hid, lid)
+        result = await self.repo.get_list(hid, lid)
+        await self._publish("shopping_item.removed", result, actor_id, iid, {"item_id": str(iid)})
+        return result
