@@ -50,7 +50,8 @@ async def session_factory(
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE household_invitations, household_memberships, households, "
+                "TRUNCATE shopping_list_items, shopping_lists, household_invitations, "
+                "household_memberships, households, "
                 "refresh_sessions, users CASCADE"
             )
         )
@@ -58,7 +59,8 @@ async def session_factory(
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE household_invitations, household_memberships, households, "
+                "TRUNCATE shopping_list_items, shopping_lists, household_invitations, "
+                "household_memberships, households, "
                 "refresh_sessions, users CASCADE"
             )
         )

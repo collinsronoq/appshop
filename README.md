@@ -55,6 +55,9 @@ Household endpoints are under `/api/v1/households`; invitation acceptance is
 The product catalogue is available under `/api/v1/households/{household_id}/products` and
 uses seeded categories from `/api/v1/product-categories`.
 
+Shopping lists are available under `/api/v1/households/{household_id}/shopping-lists`; list items
+preserve product identity snapshots when products are later edited.
+
 Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
 are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
 of at least 32 characters; the example development value is rejected in staging and production.
@@ -91,8 +94,8 @@ npm run test
 
 ## Scope
 
-Unit 3 adds the household product catalogue, categories, archive semantics, substitutes, and
-bounded local image uploads. Shopping lists and trips remain future units.
+Unit 4 adds collaborative shopping lists and snapshot-backed list items. Shopping trips and
+execution state remain future units.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.

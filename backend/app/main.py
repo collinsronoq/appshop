@@ -12,6 +12,7 @@ from app.core.errors import ApiError, api_error_handler, validation_error_handle
 from app.core.logging import configure_logging
 from app.households.router import router as households_router
 from app.products.router import router as products_router
+from app.shopping.router import router as shopping_router
 
 
 @asynccontextmanager
@@ -34,3 +35,4 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(me_router, prefix="/api/v1")
 app.include_router(households_router, prefix="/api/v1")
 app.include_router(products_router, prefix="/api/v1")
+app.include_router(shopping_router, prefix="/api/v1")
