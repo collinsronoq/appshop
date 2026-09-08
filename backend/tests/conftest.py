@@ -48,10 +48,20 @@ async def session_factory(
     engine = create_async_engine(test_settings.DATABASE_URL, poolclass=NullPool)
     factory = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as connection:
-        await connection.execute(text("TRUNCATE refresh_sessions, users CASCADE"))
+        await connection.execute(
+            text(
+                "TRUNCATE household_invitations, household_memberships, households, "
+                "refresh_sessions, users CASCADE"
+            )
+        )
     yield factory
     async with engine.begin() as connection:
-        await connection.execute(text("TRUNCATE refresh_sessions, users CASCADE"))
+        await connection.execute(
+            text(
+                "TRUNCATE household_invitations, household_memberships, households, "
+                "refresh_sessions, users CASCADE"
+            )
+        )
     await engine.dispose()
 
 

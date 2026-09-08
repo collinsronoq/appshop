@@ -1,8 +1,11 @@
 import { type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { AuthApiError, type AuthClient } from "./api-client";
 import { AuthProvider, useAuth } from "./auth-context";
+import { HouseholdProvider } from "../households/household-context";
+import { HouseholdApiClient } from "../households/api-client";
 import type { LoginInput, RegisterInput, User } from "./types";
 import AuthenticatedHomeScreen from "../../app/(app)/index";
 import { LoginScreen } from "../screens/login-screen";
@@ -10,6 +13,11 @@ import { RegisterScreen } from "../screens/register-screen";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: jest.fn() })
+}));
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(async () => undefined),
+  removeItem: jest.fn(async () => undefined)
 }));
 
 const USER: User = {
@@ -44,7 +52,10 @@ class FakeAuthClient implements AuthClient {
     this.logoutCalls += 1;
   }
 
-  async authenticatedRequest<T>(_path: string, _init?: RequestInit) {
+  async authenticatedRequest<T>(path: string, _init?: RequestInit) {
+    if (path === "/households") {
+      return [{ id: "h1", name: "Home", role: "owner", member_count: 1, created_at: "2026-09-08T12:00:00Z" }] as T;
+    }
     return USER as T;
   }
 }
@@ -58,10 +69,15 @@ function SessionSwitch({ authScreen }: { authScreen: ReactNode }) {
 }
 
 function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <AuthProvider client={client}>
-      <SessionSwitch authScreen={authScreen} />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider client={client}>
+        <HouseholdProvider client={new HouseholdApiClient(client)}>
+          <SessionSwitch authScreen={authScreen} />
+        </HouseholdProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -49,6 +49,9 @@ Authentication endpoints under `http://localhost:8000/api/v1`:
 - `POST /auth/logout`
 - `GET /me`
 
+Household endpoints are under `/api/v1/households`; invitation acceptance is
+`POST /api/v1/invitations/{token}/accept`.
+
 Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
 are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
 of at least 32 characters; the example development value is rejected in staging and production.
@@ -85,8 +88,8 @@ npm run test
 
 ## Scope
 
-Unit 1 adds the complete authentication lifecycle and the mobile authenticated/unauthenticated
-routing shell. Household and shopping-domain functionality intentionally begins in Unit 2.
+Unit 2 adds household creation, membership authorization, owner invitations, acceptance, and the
+mobile household onboarding/switcher/member flow. Shopping-domain functionality begins later.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: Literal["HS256"] = "HS256"
     ACCESS_TOKEN_TTL_MINUTES: int = Field(default=15, ge=1, le=60)
     REFRESH_TOKEN_TTL_DAYS: int = Field(default=30, ge=1, le=365)
+    HOUSEHOLD_INVITE_TTL_DAYS: int = Field(default=7, ge=1, le=30)
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> Self:

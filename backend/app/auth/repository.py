@@ -18,6 +18,12 @@ class UserRepository:
     async def get_by_id(self, user_id: UUID) -> User | None:
         return await self.session.get(User, user_id)
 
+    async def get_by_email_for_update(self, email: str) -> User | None:
+        user = await self.session.scalar(
+            select(User).where(User.email == email).with_for_update()
+        )
+        return user
+
     def add(self, user: User) -> None:
         self.session.add(user)
 

@@ -19,5 +19,6 @@ Recommended reading order:
 13. `12-future-roadmap.md`
 14. `13-unit-0-baseline.md`
 15. `14-authentication.md`
+16. `15-households-membership.md`
 
 The implementation plan is designed to be executed unit by unit with Codex.

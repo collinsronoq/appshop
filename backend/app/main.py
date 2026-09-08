@@ -10,6 +10,7 @@ from app.auth.router import router as auth_router
 from app.core.database import get_engine
 from app.core.errors import ApiError, api_error_handler, validation_error_handler
 from app.core.logging import configure_logging
+from app.households.router import router as households_router
 
 
 @asynccontextmanager
@@ -30,3 +31,4 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)  # t
 app.include_router(health_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(me_router, prefix="/api/v1")
+app.include_router(households_router, prefix="/api/v1")

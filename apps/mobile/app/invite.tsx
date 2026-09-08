@@ -1,0 +1,6 @@
+import { useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useHouseholds } from "../src/households/household-context";
+import { householdApiClient } from "../src/households/api-client";
+export default function Invite(){const router=useRouter();const {selected}=useHouseholds();const [email,setEmail]=useState("");const [sent,setSent]=useState(false);const submit=async()=>{if(selected?.role!=="owner")return;await householdApiClient.invite(selected.id,email.trim().toLowerCase());setSent(true);};return <View style={{padding:24,paddingTop:80}}><Text style={{fontSize:28,fontWeight:"800"}}>Invite a member</Text><TextInput accessibilityLabel="Invite email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={{borderWidth:1,borderColor:"#b7c4bb",padding:14,borderRadius:12,marginTop:20}}/><Pressable onPress={()=>void submit()} style={{backgroundColor:"#245a43",padding:16,borderRadius:12,marginTop:14,alignItems:"center"}}><Text style={{color:"#fff",fontWeight:"700"}}>Send invitation</Text></Pressable>{sent?<Text style={{marginTop:16}}>Invitation created. Share the secure link from your server.</Text>:null}<Pressable onPress={()=>router.back()}><Text style={{padding:16,textAlign:"center"}}>Back</Text></Pressable></View>}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { AuthApiError } from "../auth/api-client";
 import { useAuth } from "../auth/auth-context";
@@ -9,6 +9,7 @@ import { AuthScreen, authStyles } from "../components/auth-screen";
 
 export function LoginScreen() {
   const router = useRouter();
+  const { invite } = useLocalSearchParams<{ invite?: string }>();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,6 +27,7 @@ export function LoginScreen() {
     setIsSubmitting(true);
     try {
       await login(input);
+      if (invite) router.replace({ pathname: "/invitation/[token]", params: { token: invite } });
     } catch (caught) {
       setError(
         caught instanceof AuthApiError ? caught.message : "Unable to sign in. Please try again."

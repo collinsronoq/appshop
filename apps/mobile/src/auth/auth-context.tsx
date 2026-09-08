@@ -8,6 +8,7 @@ import {
   useRef,
   useState
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { authApiClient, type AuthClient } from "./api-client";
 import type { AuthStatus, LoginInput, RegisterInput, User } from "./types";
@@ -27,6 +28,7 @@ type AuthProviderProps = PropsWithChildren<{
 }>;
 
 export function AuthProvider({ children, client = authApiClient }: AuthProviderProps) {
+  const queryClient = useQueryClient();
   const clientRef = useRef(client);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<User | null>(null);
@@ -71,8 +73,9 @@ export function AuthProvider({ children, client = authApiClient }: AuthProviderP
     } finally {
       setUser(null);
       setStatus("unauthenticated");
+      queryClient.clear();
     }
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo(
     () => ({ status, user, login, register, logout }),
