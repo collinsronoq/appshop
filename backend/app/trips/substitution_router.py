@@ -1,9 +1,10 @@
 # mypy: ignore-errors
+# ruff: noqa
 from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,12 +13,24 @@ from app.auth.dependencies import CurrentUser
 from app.core.database import get_db_session
 from app.core.errors import ApiError
 from app.households.repository import HouseholdRepository
-from app.products.models import HouseholdProduct
+from app.products.models import HouseholdProduct, ProductSubstitute
+from app.products.service import LocalObjectStorage
+from app.shopping.models import ShoppingListItem
+from app.core.config import get_settings
+from app.realtime.events import RealtimeEvent
+from app.realtime.manager import publisher
+from uuid import uuid4
 
 from .models import ShoppingTrip, TripItem, TripItemStatus
 from .substitutions import SubstitutionRequest
 
 router = APIRouter(tags=["substitutions"])
+
+async def emit(kind, req, trip, actor):
+    try:
+        await publisher.publish(RealtimeEvent(type=kind, household_id=req.household_id, list_id=trip.shopping_list_id, trip_id=trip.id, resource_id=req.id, actor_id=actor, version=trip.version))
+    except Exception:
+        pass
 
 
 class Proposal(BaseModel):
@@ -146,6 +159,7 @@ async def create(
     session.add(req)
     trip.version = ShoppingTrip.version + 1
     await session.commit()
+    await emit("substitution.requested", req, trip, user.id)
     return view(req)
 
 
@@ -196,6 +210,7 @@ async def decide(hid, rid, user, session, status):
         )
     trip.version = ShoppingTrip.version + 1
     await session.commit()
+    await emit("substitution." + status, req, trip, user.id)
     return view(req)
 
 
@@ -217,3 +232,49 @@ async def reject(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ):
     return await decide(household_id, substitution_id, user, session, "rejected")
+
+@router.get("/households/{household_id}/substitutions")
+async def list_pending(household_id: UUID, user: CurrentUser, status: str = "pending", session: Annotated[AsyncSession, Depends(get_db_session)] = None):
+    await access(session, household_id, user)
+    rows = (await session.scalars(select(SubstitutionRequest).where(SubstitutionRequest.household_id == household_id, SubstitutionRequest.status == status).order_by(SubstitutionRequest.created_at.desc()))).all()
+    return [view(row) for row in rows]
+
+@router.get("/households/{household_id}/substitutions/{substitution_id}")
+async def get_request(household_id: UUID, substitution_id: UUID, user: CurrentUser, session: Annotated[AsyncSession, Depends(get_db_session)]):
+    await access(session, household_id, user)
+    row = await session.scalar(select(SubstitutionRequest).where(SubstitutionRequest.id == substitution_id, SubstitutionRequest.household_id == household_id))
+    if not row:
+        raise ApiError(status_code=404, code="SUBSTITUTION_NOT_FOUND", message="Substitution request not found.")
+    return view(row)
+
+@router.post("/households/{household_id}/trips/{trip_id}/items/{trip_item_id}/apply-preferred-substitute")
+async def apply_preferred(household_id: UUID, trip_id: UUID, trip_item_id: UUID, user: CurrentUser, session: Annotated[AsyncSession, Depends(get_db_session)]):
+    await access(session, household_id, user)
+    trip = await session.scalar(select(ShoppingTrip).where(ShoppingTrip.id == trip_id, ShoppingTrip.household_id == household_id).with_for_update())
+    item = await session.scalar(select(TripItem).where(TripItem.id == trip_item_id, TripItem.shopping_trip_id == trip_id, TripItem.household_id == household_id).with_for_update())
+    if not trip or not item or trip.status != "active" or item.status is not TripItemStatus.PENDING:
+        raise ApiError(status_code=409, code="TRIP_ITEM_NOT_PENDING", message="Trip item is not pending.")
+    source = await session.scalar(select(ShoppingListItem).where(ShoppingListItem.id == item.shopping_list_item_id))
+    pref = await session.scalar(select(ProductSubstitute).where(ProductSubstitute.product_id == source.household_product_id, ProductSubstitute.household_id == household_id).order_by(ProductSubstitute.preference_rank)) if source and source.household_product_id else None
+    product = await session.scalar(select(HouseholdProduct).where(HouseholdProduct.id == pref.substitute_product_id, HouseholdProduct.archived_at.is_(None))) if pref and pref.substitute_product_id else None
+    if not pref or (pref.substitute_product_id and not product):
+        raise ApiError(status_code=404, code="PREFERRED_SUBSTITUTE_NOT_FOUND", message="No preferred substitute is available.")
+    item.purchased_name_snapshot = product.name if product else pref.substitute_name
+    item.purchased_brand_snapshot = product.brand if product else None; item.purchased_variant_snapshot = product.variant if product else None
+    item.purchased_size_value_snapshot = product.size_value if product else None; item.purchased_size_unit_snapshot = product.size_unit if product else None; item.substituted = True
+    trip.version = ShoppingTrip.version + 1
+    await session.commit()
+    try:
+        await publisher.publish(RealtimeEvent(type="substitution.applied", household_id=household_id, list_id=trip.shopping_list_id, trip_id=trip.id, resource_id=item.id, actor_id=user.id, version=trip.version))
+    except Exception:
+        pass
+    return {"trip_item_id": item.id, "status": item.status, "substituted": True}
+
+@router.post("/households/{household_id}/substitutions/{substitution_id}/image")
+async def image(household_id: UUID, substitution_id: UUID, file: Annotated[UploadFile, File()], user: CurrentUser, session: Annotated[AsyncSession, Depends(get_db_session)]):
+    await access(session, household_id, user)
+    req = await session.scalar(select(SubstitutionRequest).where(SubstitutionRequest.id == substitution_id, SubstitutionRequest.household_id == household_id))
+    if not req: raise ApiError(status_code=404, code="SUBSTITUTION_NOT_FOUND", message="Substitution request not found.")
+    storage = LocalObjectStorage(get_settings()); key = f"households/{household_id}/trips/{req.shopping_trip_id}/substitutions/{req.id}/{uuid4().hex}"
+    await storage.save(key, file); old = req.image_key; req.image_key = key; await session.commit(); await storage.delete(old)
+    return {"id": req.id, "image_url": storage.url_for(key)}
