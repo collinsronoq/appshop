@@ -5,10 +5,10 @@ from sqlalchemy import create_engine, pool
 import app.auth.models  # noqa: F401
 import app.households.models  # noqa: F401
 import app.products.models  # noqa: F401
+import app.purchases.models  # noqa: F401
 import app.shopping.models  # noqa: F401
 import app.trips.models  # noqa: F401
 import app.trips.substitutions  # noqa: F401
-import app.purchases.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings
 from app.models.base import Base
