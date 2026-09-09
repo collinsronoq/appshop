@@ -61,6 +61,33 @@ async def test_pending_item_rejects_completion_without_purchases(api_client: htt
     ).json() == []
 
 
+async def test_purchase_history_is_household_scoped(api_client: httpx.AsyncClient):
+    user_a, hid_a, _ = await setup_trip(api_client, "history-a@example.com")
+    user_b, hid_b, trip_b = await setup_trip(api_client, "history-b@example.com")
+    base = f"/api/v1/households/{hid_b}/trips/{trip_b['id']}"
+    await api_client.post(
+        f"{base}/items/{trip_b['items'][0]['id']}/collect", headers=auth(user_b), json={}
+    )
+    await api_client.post(f"{base}/items/{trip_b['items'][1]['id']}/skip", headers=auth(user_b))
+    await api_client.post(f"{base}/complete", headers=auth(user_b))
+    response = await api_client.get(f"/api/v1/households/{hid_b}/purchases", headers=auth(user_a))
+    assert response.status_code == 404
+
+
+async def test_purchase_pagination(api_client: httpx.AsyncClient):
+    user, hid, trip = await setup_trip(api_client, "pagination@example.com")
+    base = f"/api/v1/households/{hid}/trips/{trip['id']}"
+    await api_client.post(
+        f"{base}/items/{trip['items'][0]['id']}/collect", headers=auth(user), json={}
+    )
+    await api_client.post(f"{base}/items/{trip['items'][1]['id']}/skip", headers=auth(user))
+    await api_client.post(f"{base}/complete", headers=auth(user))
+    page = await api_client.get(
+        f"/api/v1/households/{hid}/purchases?limit=1&offset=0", headers=auth(user)
+    )
+    assert page.status_code == 200 and len(page.json()) == 1
+
+
 async def test_duplicate_completion_does_not_duplicate_purchase(api_client: httpx.AsyncClient):
     user, hid, trip = await setup_trip(api_client, "duplicate-purchase@example.com")
     base = f"/api/v1/households/{hid}/trips/{trip['id']}"
