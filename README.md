@@ -97,8 +97,9 @@ npm run test
 
 ## Scope
 
-Unit 4 adds collaborative shopping lists and snapshot-backed list items. Shopping trips and
-execution state remain future units.
+Unit 6 adds shopping trips and mobile shopping mode. Trips snapshot list items, track collected
+and skipped state, enforce one active trip per list, and synchronize through versioned realtime
+events. Receipt capture, purchase history, and analytics remain future units.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.

@@ -9,6 +9,8 @@ from app.households.repository import HouseholdRepository
 from app.products.repository import ProductRepository
 from app.realtime.events import RealtimeEvent
 from app.realtime.manager import publisher
+from app.trips.models import ShoppingTrip, TripItem, TripItemStatus
+from app.trips.repository import TripRepository
 
 from .models import ShoppingList, ShoppingListItem, ShoppingListStatus
 from .repository import ShoppingRepository
@@ -23,6 +25,7 @@ class ShoppingService:
         self.households = HouseholdRepository(session)
         self.products = ProductRepository(session)
         self.publisher = event_publisher
+        self.trips = TripRepository(session)
 
     async def _publish(self, event_type, listing, actor_id, resource_id=None, payload=None):
         try:
@@ -81,6 +84,12 @@ class ShoppingService:
         if not listing:
             raise ApiError(
                 status_code=404, code="SHOPPING_LIST_NOT_FOUND", message="Shopping list not found."
+            )
+        if await self.trips.active_for_list(hid, lid):
+            raise ApiError(
+                status_code=409,
+                code="SHOPPING_LIST_HAS_ACTIVE_TRIP",
+                message="Cancel the active trip first.",
             )
         changed = not listing.archived_at
         if changed:
@@ -156,6 +165,25 @@ class ShoppingService:
             position=position,
         )
         self.repo.add_item(item)
+        await self.session.flush()
+        active_trip = await self.trips.active_for_list(hid, lid)
+        if active_trip:
+            active_trip.version = ShoppingTrip.version + 1
+            self.session.add(
+                TripItem(
+                    household_id=hid,
+                    shopping_trip_id=active_trip.id,
+                    shopping_list_item_id=item.id,
+                    requested_name_snapshot=name,
+                    requested_brand_snapshot=brand,
+                    requested_variant_snapshot=variant,
+                    requested_size_value_snapshot=size_value,
+                    requested_size_unit_snapshot=size_unit,
+                    requested_quantity=data.requested_quantity,
+                    category_id=category_id,
+                    notes=data.notes,
+                )
+            )
         listing.version = ShoppingList.version + 1
         await self.session.commit()
         result = await self.repo.get_list(hid, lid)
@@ -172,6 +200,22 @@ class ShoppingService:
                 }
             },
         )
+        if active_trip:
+            try:
+                await self.publisher.publish(
+                    RealtimeEvent(
+                        type="trip_item.added",
+                        household_id=hid,
+                        list_id=lid,
+                        trip_id=active_trip.id,
+                        resource_id=item.id,
+                        actor_id=user.id,
+                        version=active_trip.version,
+                        payload={"name": item.name_snapshot},
+                    )
+                )
+            except Exception:
+                pass
         return result
 
     async def update_item(self, hid, lid, iid, data, actor_id):
@@ -186,6 +230,20 @@ class ShoppingService:
                 item.name_snapshot = value
             elif hasattr(item, key):
                 setattr(item, key, value)
+        active_trip = await self.trips.active_for_list(hid, lid)
+        if active_trip:
+            trip_item = next(
+                (
+                    x
+                    for x in active_trip.items
+                    if x.shopping_list_item_id == item.id and x.status is TripItemStatus.PENDING
+                ),
+                None,
+            )
+            if trip_item:
+                trip_item.requested_quantity = item.requested_quantity
+                trip_item.notes = item.notes
+                active_trip.version = ShoppingTrip.version + 1
         listing.version = ShoppingList.version + 1
         await self.session.commit()
         result = await self.repo.get_list(hid, lid)
@@ -198,6 +256,31 @@ class ShoppingService:
         if not item:
             raise ApiError(
                 status_code=404, code="SHOPPING_LIST_ITEM_NOT_FOUND", message="List item not found."
+            )
+        active_trip = await self.trips.active_for_list(hid, lid)
+        if active_trip:
+            trip_item = next(
+                (
+                    x
+                    for x in active_trip.items
+                    if x.shopping_list_item_id == iid and x.status is TripItemStatus.PENDING
+                ),
+                None,
+            )
+            if trip_item:
+                await self.session.delete(trip_item)
+                active_trip.version = ShoppingTrip.version + 1
+            elif await self.trips.source_exists(iid):
+                raise ApiError(
+                    status_code=409,
+                    code="SHOPPING_LIST_ITEM_HAS_TRIP_HISTORY",
+                    message="Trip history prevents deleting this item.",
+                )
+        elif await self.trips.source_exists(iid):
+            raise ApiError(
+                status_code=409,
+                code="SHOPPING_LIST_ITEM_HAS_TRIP_HISTORY",
+                message="Trip history prevents deleting this item.",
             )
         await self.session.delete(item)
         listing.version = ShoppingList.version + 1

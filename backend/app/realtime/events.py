@@ -10,6 +10,7 @@ class RealtimeEvent(BaseModel):
     type: str
     household_id: UUID
     list_id: UUID
+    trip_id: UUID | None = None
     resource_id: UUID | None = None
     actor_id: UUID
     version: int

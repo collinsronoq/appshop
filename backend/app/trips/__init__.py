@@ -1,0 +1,1 @@
+"""Shopping trip execution domain."""

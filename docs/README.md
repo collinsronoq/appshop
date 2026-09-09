@@ -23,5 +23,6 @@ Recommended reading order:
 17. `16-household-products.md`
 18. `17-shopping-lists.md`
 19. `18-realtime-collaboration.md`
+20. `19-shopping-trips.md`
 
 The implementation plan is designed to be executed unit by unit with Codex.
