@@ -9,4 +9,5 @@ export const tripApi={
  skip:(h:string,t:string,i:string)=>call(`/households/${h}/trips/${t}/items/${i}/skip`,{method:"POST"}),
  undo:(h:string,t:string,i:string)=>call(`/households/${h}/trips/${t}/items/${i}/undo`,{method:"POST"}),
  cancel:(h:string,t:string)=>call(`/households/${h}/trips/${t}/cancel`,{method:"POST"})
+ ,complete:(h:string,t:string)=>authApiClient.authenticatedRequest<any>(`/households/${h}/trips/${t}/complete`,{method:"POST"})
 };

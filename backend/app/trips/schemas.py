@@ -44,5 +44,6 @@ class TripResponse(BaseModel):
     version: int
     started_at: datetime
     cancelled_at: datetime | None
+    completed_at: datetime | None = None
     progress: Progress
     items: list[TripItemResponse]

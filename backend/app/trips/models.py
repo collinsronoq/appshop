@@ -27,6 +27,7 @@ from app.shopping.models import ShoppingListItem
 class TripStatus(StrEnum):
     ACTIVE = "active"
     CANCELLED = "cancelled"
+    COMPLETED = "completed"
 
 
 class TripItemStatus(StrEnum):
@@ -64,6 +65,7 @@ class ShoppingTrip(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now()
     )
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now()
     )

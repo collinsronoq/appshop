@@ -75,6 +75,24 @@ npm run start
 
 For a physical device, set `EXPO_PUBLIC_API_BASE_URL` to the development computer's LAN-accessible API URL rather than `localhost`.
 
+## Local PostgreSQL
+
+The Compose `postgres` service uses local-only credentials and creates separate `appshop`
+(development) and `appshop_test` (integration tests) databases on a fresh volume:
+
+```bash
+docker compose up -d postgres
+docker compose ps
+cd backend
+uv run alembic upgrade head
+ENV=test DATABASE_URL=postgresql+asyncpg://appshop:appshop@localhost:5432/appshop_test \
+  MIGRATION_DATABASE_URL=postgresql+psycopg://appshop:appshop@localhost:5432/appshop_test uv run pytest -q
+```
+
+Stop PostgreSQL with `docker compose stop postgres` (keeps data). `docker compose down -v`
+removes the named volume and all local databases, so use it only for a deliberate clean reset.
+Set `POSTGRES_PORT` if local port 5432 is occupied.
+
 ## Quality checks
 
 Backend:
@@ -97,9 +115,9 @@ npm run test
 
 ## Scope
 
-Unit 6 adds shopping trips and mobile shopping mode. Trips snapshot list items, track collected
-and skipped state, enforce one active trip per list, and synchronize through versioned realtime
-events. Receipt capture, purchase history, and analytics remain future units.
+Unit 8 adds shopping trip completion and raw purchase history. Collected trip items become durable
+purchase records with requested/purchased snapshots; skipped items remain history without purchases.
+Purchase recommendations, restocking, and analytics remain future units.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.

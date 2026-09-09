@@ -43,6 +43,7 @@ def output(trip):
         version=trip.version,
         started_at=trip.started_at,
         cancelled_at=trip.cancelled_at,
+        completed_at=trip.completed_at,
         progress=Progress(
             total=len(items),
             pending=counts["pending"],

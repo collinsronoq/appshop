@@ -17,10 +17,10 @@ class Settings(BaseSettings):
 
     ENV: Literal["development", "test", "staging", "production"] = "development"
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://shopping:shopping@localhost:5432/shopping"
+        default="postgresql+asyncpg://appshop:appshop@localhost:5432/appshop"
     )
     MIGRATION_DATABASE_URL: str = Field(
-        default="postgresql+psycopg://shopping:shopping@localhost:5432/shopping"
+        default="postgresql+psycopg://appshop:appshop@localhost:5432/appshop"
     )
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
