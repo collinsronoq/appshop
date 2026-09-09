@@ -26,5 +26,6 @@ Recommended reading order:
 20. `19-shopping-trips.md`
 21. `20-substitutions.md`
 22. `21-trip-completion-purchases.md`
+23. `22-purchasing-memory.md`
 
 The implementation plan is designed to be executed unit by unit with Codex.
