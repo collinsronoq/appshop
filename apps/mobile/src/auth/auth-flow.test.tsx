@@ -70,7 +70,9 @@ function SessionSwitch({ authScreen }: { authScreen: ReactNode }) {
 }
 
 function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } }
+  });
   return render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider client={client}>

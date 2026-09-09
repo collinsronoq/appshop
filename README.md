@@ -61,6 +61,10 @@ preserve product identity snapshots when products are later edited.
 Active list detail screens use `/api/v1/realtime` for process-local committed-change notifications;
 HTTP remains the canonical mutation transport.
 
+Expo push notifications cover substitution requests and approval/rejection outcomes while members
+are away. Device registration uses `POST /api/v1/push-tokens`; see
+`docs/23-push-notifications.md` for lifecycle, delivery, and deep-link behavior.
+
 Access tokens expire after 15 minutes by default. Opaque refresh credentials expire after 30 days,
 are stored hashed by the API, and rotate on every successful refresh. Set a private `JWT_SECRET`
 of at least 32 characters; the example development value is rejected in staging and production.
@@ -115,9 +119,10 @@ npm run test
 
 ## Scope
 
-Unit 8 adds shopping trip completion and raw purchase history. Collected trip items become durable
-purchase records with requested/purchased snapshots; skipped items remain history without purchases.
-Purchase recommendations, restocking, and analytics remain future units.
+The application includes durable purchase history, household purchasing memory, and focused push
+notifications for substitution decisions. Predictive restocking, AI, and receipt OCR remain out of
+scope.
 
 See `docs/11-implementation-plan.md` for the full implementation sequence.
 See `docs/14-authentication.md` for the implemented authentication design.
+See `docs/23-push-notifications.md` for the Unit 10 push-notification design.

@@ -7,6 +7,7 @@ import type {
   TokenResponse,
   User
 } from "./types";
+import { pushStorage } from "../notifications/storage";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8000/api/v1";
 
@@ -77,8 +78,18 @@ export class AuthApiClient implements AuthClient {
   }
 
   async logout(): Promise<void> {
-    const token = this.refreshToken ?? (await this.storage.get());
     try {
+      const pushTokenId = await pushStorage.getTokenId();
+      if (pushTokenId && this.accessToken) {
+        try {
+          await this.authenticatedRequest<void>(`/push-tokens/${pushTokenId}`, {
+            method: "DELETE"
+          });
+        } catch {
+          // Push cleanup is best-effort and must never block local logout.
+        }
+      }
+      const token = this.refreshToken ?? (await this.storage.get());
       if (token) {
         await this.publicRequest<void>("/auth/logout", {
           method: "POST",
@@ -88,6 +99,7 @@ export class AuthApiClient implements AuthClient {
     } catch {
       // Local sign-out must succeed even when the API is unreachable.
     } finally {
+      await pushStorage.clearTokenId();
       await this.clearLocalSession();
     }
   }

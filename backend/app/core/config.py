@@ -16,24 +16,21 @@ class Settings(BaseSettings):
     )
 
     ENV: Literal["development", "test", "staging", "production"] = "development"
-    DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://appshop:appshop@localhost:5432/appshop"
-    )
+    DATABASE_URL: str = Field(default="postgresql+asyncpg://appshop:appshop@localhost:5432/appshop")
     MIGRATION_DATABASE_URL: str = Field(
         default="postgresql+psycopg://appshop:appshop@localhost:5432/appshop"
     )
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     LOG_LEVEL: str = "INFO"
-    JWT_SECRET: SecretStr = SecretStr(
-        "development-only-change-this-jwt-secret-before-production"
-    )
+    JWT_SECRET: SecretStr = SecretStr("development-only-change-this-jwt-secret-before-production")
     JWT_ALGORITHM: Literal["HS256"] = "HS256"
     ACCESS_TOKEN_TTL_MINUTES: int = Field(default=15, ge=1, le=60)
     REFRESH_TOKEN_TTL_DAYS: int = Field(default=30, ge=1, le=365)
     HOUSEHOLD_INVITE_TTL_DAYS: int = Field(default=7, ge=1, le=30)
     STORAGE_BACKEND: Literal["local", "s3"] = "local"
     LOCAL_STORAGE_ROOT: str = "./storage"
+    EXPO_PUSH_URL: str = "https://exp.host/--/api/v2/push/send"
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> Self:

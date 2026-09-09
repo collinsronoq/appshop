@@ -6,6 +6,7 @@ import app.auth.models  # noqa: F401
 import app.households.models  # noqa: F401
 import app.products.models  # noqa: F401
 import app.purchases.models  # noqa: F401
+import app.push_notifications.models  # noqa: F401
 import app.shopping.models  # noqa: F401
 import app.trips.models  # noqa: F401
 import app.trips.substitutions  # noqa: F401

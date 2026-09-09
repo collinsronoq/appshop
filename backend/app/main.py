@@ -14,6 +14,7 @@ from app.households.router import router as households_router
 from app.products.router import router as products_router
 from app.purchases.memory import router as memory_router
 from app.purchases.router import router as purchases_router
+from app.push_notifications.router import router as push_notifications_router
 from app.realtime.router import router as realtime_router
 from app.shopping.router import router as shopping_router
 from app.trips.router import router as trips_router
@@ -42,6 +43,7 @@ app.include_router(households_router, prefix="/api/v1")
 app.include_router(products_router, prefix="/api/v1")
 app.include_router(purchases_router, prefix="/api/v1")
 app.include_router(memory_router, prefix="/api/v1")
+app.include_router(push_notifications_router, prefix="/api/v1")
 app.include_router(shopping_router, prefix="/api/v1")
 app.include_router(realtime_router, prefix="/api/v1")
 app.include_router(trips_router, prefix="/api/v1")
