@@ -118,6 +118,12 @@ class TripItem(Base):
         ForeignKey("product_categories.id", ondelete="SET NULL")
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    purchased_name_snapshot: Mapped[str | None] = mapped_column(String(160))
+    purchased_brand_snapshot: Mapped[str | None] = mapped_column(String(120))
+    purchased_variant_snapshot: Mapped[str | None] = mapped_column(String(160))
+    purchased_size_value_snapshot: Mapped[float | None] = mapped_column(Numeric(12, 3))
+    purchased_size_unit_snapshot: Mapped[str | None] = mapped_column(String(24))
+    substituted: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false")
     collected_by_user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

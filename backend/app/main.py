@@ -15,6 +15,7 @@ from app.products.router import router as products_router
 from app.realtime.router import router as realtime_router
 from app.shopping.router import router as shopping_router
 from app.trips.router import router as trips_router
+from app.trips.substitution_router import router as substitution_router
 
 
 @asynccontextmanager
@@ -40,3 +41,4 @@ app.include_router(products_router, prefix="/api/v1")
 app.include_router(shopping_router, prefix="/api/v1")
 app.include_router(realtime_router, prefix="/api/v1")
 app.include_router(trips_router, prefix="/api/v1")
+app.include_router(substitution_router, prefix="/api/v1")
