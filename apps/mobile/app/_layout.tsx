@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { AuthProvider } from "../src/auth/auth-context";
 import { HouseholdProvider } from "../src/households/household-context";
-import { NotificationCoordinator } from "../src/notifications/notification-coordinator";
+import { NotificationCoordinatorHost } from "../src/notifications/notification-coordinator-host";
 
 const queryClient = new QueryClient();
 
@@ -13,7 +13,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <HouseholdProvider>
-          <NotificationCoordinator />
+          <NotificationCoordinatorHost />
           <Stack screenOptions={{ headerShown: false }} />
           <StatusBar style="auto" />
         </HouseholdProvider>

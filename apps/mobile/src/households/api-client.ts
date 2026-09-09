@@ -8,7 +8,7 @@ export class HouseholdApiClient {
   create(name: string) { return this.client.authenticatedRequest<HouseholdDetail>("/households", { method: "POST", body: JSON.stringify({ name }) }); }
   rename(id: string, name: string) { return this.client.authenticatedRequest<HouseholdDetail>(`/households/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }); }
   members(id: string) { return this.client.authenticatedRequest<HouseholdMember[]>(`/households/${id}/members`); }
-  invite(id: string, email: string) { return this.client.authenticatedRequest<Invitation>(`/households/${id}/invitations`, { method: "POST", body: JSON.stringify({ invited_email: email }) }); }
+  invite(id: string, email: string) { return this.client.authenticatedRequest<Invitation>(`/households/${id}/invitations`, { method: "POST", body: JSON.stringify({ email }) }); }
   accept(token: string) { return this.client.authenticatedRequest<HouseholdDetail>(`/invitations/${encodeURIComponent(token)}/accept`, { method: "POST" }); }
 }
 
