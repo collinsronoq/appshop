@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, iconSizes, radius, spacing, typography } from "../design/theme";
 import { SurfaceCard } from "../design/components";
+import { formatQuantity, formatSize } from "../design/format";
 import type { ShoppingList, ShoppingListItem } from "./types";
 import type { ShoppingTrip } from "../trips/types";
 
@@ -56,14 +57,14 @@ export function ShoppingListCard({
 }
 
 export function ListItemRow({ item, onMenu }: { item: ShoppingListItem; onMenu: () => void }) {
-  const metadata = [item.brand, item.variant, item.size_value && `${item.size_value} ${item.size_unit ?? ""}`].filter(Boolean).join(" · ");
+  const metadata = [item.brand, item.variant, formatSize(item.size_value, item.size_unit)].filter(Boolean).join(" · ");
   return (
     <View style={styles.itemRow}>
       <View style={styles.itemIcon}><Feather color={colors.primary} name={item.household_product_id ? "package" : "edit-3"} size={18} /></View>
       <View style={styles.flex}>
         <Text style={styles.itemName}>{item.name}</Text>
         {metadata ? <Text style={styles.meta}>{metadata}</Text> : null}
-        <Text style={styles.meta}>Qty {item.requested_quantity}</Text>
+        <Text style={styles.meta}>Qty {formatQuantity(item.requested_quantity)}</Text>
         {item.notes ? <Text numberOfLines={2} style={styles.note}>{item.notes}</Text> : null}
       </View>
       <Pressable accessibilityLabel={`Actions for ${item.name}`} accessibilityRole="button" onPress={onMenu} style={styles.menuButton}><Feather color={colors.textSecondary} name="more-vertical" size={iconSizes.md} /></Pressable>

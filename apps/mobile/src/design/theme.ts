@@ -40,7 +40,7 @@ export const radius = {
 export const typography = {
   display: { fontSize: 30, lineHeight: 36, fontWeight: "800" as const },
   screenTitle: { fontSize: 26, lineHeight: 32, fontWeight: "800" as const },
-  sectionTitle: { fontSize: 19, lineHeight: 24, fontWeight: "800" as const },
+  sectionTitle: { fontSize: 18, lineHeight: 23, fontWeight: "700" as const },
   cardTitle: { fontSize: 16, lineHeight: 21, fontWeight: "700" as const },
   body: { fontSize: 15, lineHeight: 21, fontWeight: "400" as const },
   bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: "700" as const },

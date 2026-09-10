@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
   identityCard: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  avatar: { width: 56, height: 56, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  avatar: { width: 48, height: 48, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
   avatarText: { ...typography.sectionTitle, color: colors.surface },
   name: { ...typography.cardTitle, color: colors.text, fontSize: 18 },
   email: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
