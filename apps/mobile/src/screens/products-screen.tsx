@@ -1,41 +1,16 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-
-import { AppHeader, AppScreen, InlineError, LoadingState, PrimaryButton, SurfaceCard } from "../design/components";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppHeader, AppScreen, EmptyState, IconButton, InlineError, LoadingState } from "../design/components";
 import { colors, radius, spacing, typography } from "../design/theme";
 import { useHouseholds } from "../households/household-context";
 import { productApi } from "../products/api-client";
+import { ProductCard } from "../products/product-components";
 
 export function ProductsScreen() {
-  const router = useRouter();
-  const { selected } = useHouseholds();
-  const [search, setSearch] = useState("");
-  const query = useQuery({ queryKey: ["households", selected?.id, "products", search], queryFn: () => productApi.list(selected!.id, search ? `?query=${encodeURIComponent(search)}` : ""), enabled: Boolean(selected) });
-  return (
-    <AppScreen keyboardSafe>
-      <AppHeader title="Products" subtitle="Your household catalogue." />
-      <TextInput accessibilityLabel="Search products" placeholder="Search products" placeholderTextColor={colors.textSecondary} value={search} onChangeText={setSearch} style={styles.search} />
-      {query.isLoading ? <LoadingState rows={3} /> : query.isError ? <InlineError onRetry={() => void query.refetch()} /> : !query.data?.length ? (
-        <SurfaceCard><Text style={styles.emptyTitle}>{search ? "No matching products" : "No household products yet"}</Text><Text style={styles.meta}>{search ? "Try a different name, brand, or variant." : "Add the products your household buys regularly."}</Text></SurfaceCard>
-      ) : (
-        <View style={styles.list}>{query.data.map((product) => (
-          <Pressable accessibilityRole="button" key={product.id} onPress={() => router.push(`/products/${product.id}`)}>
-            <SurfaceCard><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{[product.brand, product.variant, product.size_value && `${product.size_value} ${product.size_unit ?? ""}`, product.category?.display_name].filter(Boolean).join(" · ") || `Usual quantity: ${product.usual_quantity}`}</Text></SurfaceCard>
-          </Pressable>
-        ))}</View>
-      )}
-      <View style={styles.action}><PrimaryButton icon="plus" label="Add product" onPress={() => router.push("/products/new")} /></View>
-    </AppScreen>
-  );
+  const router = useRouter(); const { selected } = useHouseholds(); const [search, setSearch] = useState(""); const [category, setCategory] = useState(""); const [archived, setArchived] = useState(false);
+  const categories = useQuery({ queryKey: ["product-categories"], queryFn: productApi.categories }); const products = useQuery({ queryKey: ["households", selected?.id, "products", search, category, archived], queryFn: () => productApi.listFiltered(selected!.id, search, category || undefined, archived), enabled: Boolean(selected) });
+  return <AppScreen><AppHeader title="Products" subtitle="Your household catalogue." right={<IconButton icon="plus" label="Add product" onPress={() => router.push("/products/new")} />} /><View style={styles.searchWrap}><TextInput accessibilityLabel="Search products" placeholder="Search products" value={search} onChangeText={setSearch} style={styles.search} />{search ? <Pressable accessibilityLabel="Clear search" onPress={() => setSearch("")} style={styles.clear}><Text>×</Text></Pressable> : null}</View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}><Pressable onPress={() => setCategory("")} style={[styles.chip, !category ? styles.selectedChip : null]}><Text style={[styles.chipText, !category ? styles.selectedText : null]}>All</Text></Pressable>{(categories.data ?? []).map(item => <Pressable key={item.id} onPress={() => setCategory(item.id)} style={[styles.chip, category === item.id ? styles.selectedChip : null]}><Text style={[styles.chipText, category === item.id ? styles.selectedText : null]}>{item.display_name}</Text></Pressable>)}<Pressable onPress={() => setArchived(value => !value)} style={[styles.chip, archived ? styles.selectedChip : null]}><Text style={[styles.chipText, archived ? styles.selectedText : null]}>{archived ? "Archived" : "Active"}</Text></Pressable></ScrollView><Text style={styles.heading}>{archived ? "Archived products" : "Products"}</Text>{products.isLoading ? <LoadingState rows={5} /> : products.isError ? <InlineError onRetry={() => void products.refetch()} /> : products.data?.length ? <View style={styles.list}>{products.data.map(product => <ProductCard key={product.id} product={product} onPress={() => router.push(`/products/${product.id}`)} />)}</View> : <EmptyState icon="package" title={search || category ? "No products found" : archived ? "No archived products" : "No products yet"} body={search || category ? "Try another name, brand, or category." : "Save the products your household buys regularly so they are faster to add to shopping lists."} action={!search && !category && !archived ? <Pressable accessibilityRole="button" onPress={() => router.push("/products/new")}><Text style={styles.actionText}>Add your first product</Text></Pressable> : null} />}</AppScreen>;
 }
-
-const styles = StyleSheet.create({
-  search: { minHeight: 48, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, ...typography.body, color: colors.text, marginBottom: spacing.lg },
-  list: { gap: spacing.sm },
-  name: { ...typography.cardTitle, color: colors.text },
-  meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
-  emptyTitle: { ...typography.cardTitle, color: colors.text },
-  action: { marginTop: spacing.xl }
-});
+const styles = StyleSheet.create({ searchWrap: { position: "relative", marginBottom: spacing.md }, search: { minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingRight: 44, ...typography.body, color: colors.text }, clear: { position: "absolute", right: spacing.sm, top: 5, width: 40, height: 40, alignItems: "center", justifyContent: "center" }, chips: { gap: spacing.sm, paddingBottom: spacing.md }, chip: { minHeight: 38, paddingHorizontal: spacing.md, borderRadius: radius.round, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: "center" }, selectedChip: { backgroundColor: colors.primary }, chipText: { ...typography.secondary, color: colors.text }, selectedText: { color: colors.surface, fontWeight: "700" }, heading: { ...typography.sectionTitle, color: colors.text, marginBottom: spacing.md }, list: { gap: spacing.sm }, actionText: { ...typography.bodyStrong, color: colors.primary, paddingVertical: spacing.md } });

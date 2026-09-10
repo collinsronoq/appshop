@@ -1,3 +1,4 @@
 import { authApiClient } from "../auth/api-client";
 export type Purchase={id:string;requested_name_snapshot:string;requested_brand_snapshot?:string|null;purchased_name_snapshot:string;purchased_brand_snapshot?:string|null;purchased_size_value_snapshot?:number|null;purchased_size_unit_snapshot?:string|null;purchased_quantity:number;substituted:boolean;purchased_at:string};
-export const purchasesApi={list:(h:string)=>authApiClient.authenticatedRequest<Purchase[]>(`/households/${h}/purchases?limit=100`),product:(h:string,p:string)=>authApiClient.authenticatedRequest<Purchase[]>(`/households/${h}/products/${p}/purchase-history?limit=100`)};
+export type PurchaseSummary={purchase_count:number;last_purchased_at:string|null;total_purchased_quantity:number|null};
+export const purchasesApi={list:(h:string)=>authApiClient.authenticatedRequest<Purchase[]>(`/households/${h}/purchases?limit=100`),product:(h:string,p:string)=>authApiClient.authenticatedRequest<Purchase[]>(`/households/${h}/products/${p}/purchase-history?limit=100`),summary:(h:string,p:string)=>authApiClient.authenticatedRequest<PurchaseSummary>(`/households/${h}/products/${p}/purchase-summary`)};
