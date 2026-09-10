@@ -1,96 +1,30 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-
+import { useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../auth/auth-context";
+import { AppScreen, BackHeader, InlineError, LoadingState, PrimaryButton, SecondaryButton, SurfaceCard } from "../design/components";
+import { colors, radius, spacing, typography } from "../design/theme";
 import { useHouseholds } from "../households/household-context";
+import { listApi } from "../lists/api-client";
 import { pushNotificationApi } from "../notifications/api-client";
 import { useShoppingListRealtime } from "../realtime/use-shopping-list-realtime";
 import { tripApi } from "../trips/api-client";
+import type { TripItem } from "../trips/types";
 
-type Props = { tripId: string; substitutionId?: string };
-
-export function ShoppingModeScreen({ tripId, substitutionId }: Props) {
-  const { user } = useAuth();
-  const { selected } = useHouseholds();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const tripQuery = useQuery({
-    queryKey: ["households", selected?.id, "trips", tripId],
-    queryFn: () => tripApi.get(selected!.id, tripId),
-    enabled: Boolean(selected)
-  });
-  const substitutionQuery = useQuery({
-    queryKey: ["households", selected?.id, "substitutions", substitutionId],
-    queryFn: () => pushNotificationApi.getSubstitution(selected!.id, substitutionId!),
-    enabled: Boolean(selected && substitutionId),
-    retry: false
-  });
-  const trip = tripQuery.data;
-  const substitution = substitutionQuery.data;
-  useShoppingListRealtime(selected?.id, trip?.shopping_list_id, tripId);
-
-  if (!trip) return <Text style={{ padding: 24 }}>Loading trip…</Text>;
-
-  const act = async (action: () => Promise<unknown>) => {
-    await action();
-    await queryClient.invalidateQueries({
-      queryKey: ["households", selected?.id, "trips", tripId]
-    });
-  };
-  const decide = async (decision: "approve" | "reject") => {
-    if (!selected || !substitutionId) return;
-    await pushNotificationApi.decide(selected.id, substitutionId, decision);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["households", selected.id, "substitutions", substitutionId] }),
-      queryClient.invalidateQueries({ queryKey: ["households", selected.id, "trips", tripId] })
-    ]);
-  };
-  const complete = () =>
-    Alert.alert("Complete this shopping trip?", "This trip cannot be reopened.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Complete", onPress: async () => {
-        await tripApi.complete(selected!.id, trip.id);
-        await queryClient.invalidateQueries();
-        router.replace("/purchases");
-      } }
-    ]);
-
-  return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 70 }}>
-      <Text style={{ fontSize: 30, fontWeight: "800" }}>Shopping mode</Text>
-      <Text style={{ marginTop: 8, fontSize: 18 }}>{trip.progress.collected} of {trip.progress.total} collected</Text>
-      {substitutionId && substitutionQuery.isError ? (
-        <View style={{ padding: 16, marginTop: 16, borderRadius: 14, backgroundColor: "#f4f1ec" }}>
-          <Text style={{ fontWeight: "700" }}>Replacement unavailable</Text>
-          <Text style={{ marginTop: 6 }}>This shopping decision is no longer available.</Text>
-        </View>
-      ) : null}
-      {substitution ? (
-        <View style={{ padding: 16, marginTop: 16, borderRadius: 14, backgroundColor: "#fff4ce" }}>
-          <Text style={{ fontSize: 18, fontWeight: "700" }}>Replacement {substitution.status}</Text>
-          <Text style={{ marginTop: 6 }}>{substitution.proposed_name}</Text>
-          {substitution.status === "pending" && substitution.requested_by_user_id !== user?.id ? (
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-              <Pressable onPress={() => void decide("approve")} style={{ backgroundColor: "#245a43", padding: 12, borderRadius: 10 }}><Text style={{ color: "#fff" }}>Approve</Text></Pressable>
-              <Pressable onPress={() => void decide("reject")} style={{ backgroundColor: "#eee", padding: 12, borderRadius: 10 }}><Text>Reject</Text></Pressable>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-      {trip.progress.pending > 0 ? <Text style={{ marginTop: 12, color: "#a33" }}>{trip.progress.pending} items still need attention</Text> : null}
-      {trip.items.map((item) => (
-        <View key={item.id} style={{ padding: 16, marginTop: 12, borderRadius: 14, backgroundColor: item.status === "collected" ? "#d9f5df" : "#fff" }}>
-          <Text style={{ fontSize: 18, fontWeight: "700" }}>{item.name}</Text>
-          <Text>{item.requested_quantity} {item.brand ?? ""}</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-            {item.status !== "collected" ? <Pressable onPress={() => void act(() => tripApi.collect(selected!.id, trip.id, item.id))} style={{ backgroundColor: "#245a43", padding: 12, borderRadius: 10 }}><Text style={{ color: "#fff" }}>Collected</Text></Pressable> : null}
-            {item.status === "pending" ? <Pressable onPress={() => void act(() => tripApi.skip(selected!.id, trip.id, item.id))} style={{ backgroundColor: "#eee", padding: 12, borderRadius: 10 }}><Text>Skip</Text></Pressable> : <Pressable onPress={() => void act(() => tripApi.undo(selected!.id, trip.id, item.id))} style={{ backgroundColor: "#eee", padding: 12, borderRadius: 10 }}><Text>Undo</Text></Pressable>}
-          </View>
-        </View>
-      ))}
-      {trip.progress.pending === 0 ? <Pressable onPress={complete} style={{ marginTop: 20, backgroundColor: "#245a43", padding: 16, borderRadius: 12, alignItems: "center" }}><Text style={{ color: "#fff", fontWeight: "700" }}>Complete shopping</Text></Pressable> : null}
-      <Pressable onPress={() => void act(() => tripApi.cancel(selected!.id, trip.id))} style={{ marginTop: 20, padding: 15, alignItems: "center" }}><Text>End trip</Text></Pressable>
-    </ScrollView>
-  );
+function TripItemCard({ item, busy, onCollect, onSkip, onUndo, onUnavailable }: { item: TripItem; busy: boolean; onCollect: () => void; onSkip: () => void; onUndo: () => void; onUnavailable: () => void }) {
+  const collected = item.status === "collected"; const skipped = item.status === "skipped";
+  return <SurfaceCard style={[styles.itemCard, collected ? styles.collectedCard : null, skipped ? styles.skippedCard : null]}><View style={styles.itemTop}><View style={[styles.statusIcon, collected ? styles.successIcon : skipped ? styles.skipIcon : null]}><Feather color={collected ? colors.success : skipped ? colors.warning : colors.primary} name={collected ? "check" : skipped ? "minus" : "shopping-bag"} size={18} /></View><View style={styles.itemCopy}><Text style={[styles.itemName, collected || skipped ? styles.mutedName : null]}>{item.name}</Text><Text style={styles.meta}>{[item.brand, item.variant, item.size_value && `${item.size_value} ${item.size_unit ?? ""}`].filter(Boolean).join(" · ")} · Qty {item.requested_quantity}</Text>{item.notes ? <Text numberOfLines={2} style={styles.note}>Note: {item.notes}</Text> : null}</View></View>{collected ? <View style={styles.stateRow}><Text style={styles.successText}>Collected</Text><SecondaryButton label="Undo" icon="rotate-ccw" fullWidth={false} onPress={onUndo} /></View> : skipped ? <View style={styles.stateRow}><Text style={styles.skipText}>Skipped</Text><SecondaryButton label="Undo" icon="rotate-ccw" fullWidth={false} onPress={onUndo} /></View> : <View style={styles.actions}><PrimaryButton label={busy ? "Saving…" : "Collected"} icon="check" disabled={busy} onPress={onCollect} /><SecondaryButton label="Can’t find it?" icon="help-circle" disabled={busy} onPress={onUnavailable} /><SecondaryButton label="Skip item" icon="minus-circle" disabled={busy} onPress={onSkip} /></View>}</SurfaceCard>;
 }
+
+export function ShoppingModeScreen({ tripId, substitutionId }: { tripId: string; substitutionId?: string }) {
+  const { user } = useAuth(); const { selected } = useHouseholds(); const router = useRouter(); const qc = useQueryClient(); const [busy, setBusy] = useState<string | null>(null);
+  const tripQuery = useQuery({ queryKey: ["households", selected?.id, "trips", tripId], queryFn: () => tripApi.get(selected!.id, tripId), enabled: Boolean(selected) }); const trip = tripQuery.data; const list = useQuery({ queryKey: ["households", selected?.id, "shopping-lists", trip?.shopping_list_id], queryFn: () => listApi.get(selected!.id, trip!.shopping_list_id), enabled: Boolean(selected && trip?.shopping_list_id) }); const substitution = useQuery({ queryKey: ["households", selected?.id, "substitutions", substitutionId], queryFn: () => pushNotificationApi.getSubstitution(selected!.id, substitutionId!), enabled: Boolean(selected && substitutionId), retry: false }); useShoppingListRealtime(selected?.id, trip?.shopping_list_id, tripId);
+  const refresh = () => void tripQuery.refetch(); const act = async (item: TripItem, action: () => Promise<unknown>) => { if (!selected) return; setBusy(item.id); try { await action(); await qc.invalidateQueries({ queryKey: ["households", selected.id, "trips", tripId] }); } catch { Alert.alert("Couldn’t update item", "Check your connection and try again."); } finally { setBusy(null); } };
+  if (tripQuery.isLoading || !trip) return <AppScreen><LoadingState rows={6} /></AppScreen>; if (tripQuery.isError) return <AppScreen><InlineError onRetry={refresh} /><SecondaryButton label="Back to list" onPress={() => router.back()} /></AppScreen>;
+  const pending = trip.items.filter(item => item.status === "pending"); const collected = trip.items.filter(item => item.status === "collected"); const skipped = trip.items.filter(item => item.status === "skipped"); const ready = pending.length === 0; const progress = trip.progress.total ? trip.progress.collected / trip.progress.total : 0;
+  const complete = () => Alert.alert("Complete this shopping trip?", "This trip cannot be reopened.", [{ text: "Keep shopping", style: "cancel" }, { text: "Complete", onPress: async () => { if (!selected) return; await tripApi.complete(selected.id, trip.id); await qc.invalidateQueries(); router.replace("/(app)/(tabs)/lists"); } }]); const cancel = () => Alert.alert("Cancel this shopping trip?", "Collected progress will remain in trip history.", [{ text: "Keep shopping", style: "cancel" }, { text: "Cancel trip", style: "destructive", onPress: async () => { if (!selected) return; await tripApi.cancel(selected.id, trip.id); router.back(); } }]);
+  return <AppScreen><BackHeader title={list.data?.name ?? "Shopping mode"} subtitle={trip.store_name || undefined} onBack={() => router.back()} right={<SecondaryButton label="End trip" fullWidth={false} onPress={cancel} />} /><SurfaceCard style={styles.progressCard}><View style={styles.progressLine}><Text style={styles.progressText}>{trip.progress.collected} of {trip.progress.total} collected</Text><Text style={styles.percent}>{Math.round(progress * 100)}%</Text></View><View accessibilityLabel={`${Math.round(progress * 100)} percent collected`} accessibilityRole="progressbar" style={styles.track}><View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} /></View><Text style={styles.remaining}>{pending.length} remaining{skipped.length ? ` · ${skipped.length} skipped` : ""}</Text></SurfaceCard>{substitutionId && substitution.isError ? <SurfaceCard><Text style={styles.itemName}>Replacement unavailable</Text><Text style={styles.meta}>This shopping decision is no longer available.</Text></SurfaceCard> : null}{substitution.data ? <SurfaceCard style={styles.subCard}><Text style={styles.subTitle}>Replacement {substitution.data.status}</Text><Text style={styles.meta}>{substitution.data.proposed_name}</Text>{substitution.data.status === "pending" && substitution.data.requested_by_user_id !== user?.id ? <View style={styles.inlineActions}><SecondaryButton label="Reject" onPress={() => void pushNotificationApi.decide(selected!.id, substitutionId!, "reject")} /><PrimaryButton label="Approve" onPress={() => void pushNotificationApi.decide(selected!.id, substitutionId!, "approve")} /></View> : null}</SurfaceCard> : null}<Text style={styles.heading}>To get</Text>{pending.length ? pending.map(item => <TripItemCard key={item.id} item={item} busy={busy === item.id} onCollect={() => void act(item, () => tripApi.collect(selected!.id, trip.id, item.id))} onSkip={() => void act(item, () => tripApi.skip(selected!.id, trip.id, item.id))} onUndo={() => void act(item, () => tripApi.undo(selected!.id, trip.id, item.id))} onUnavailable={() => Alert.alert("Can’t find it?", "You can skip this item or ask your household about a replacement.", [{ text: "Keep looking", style: "cancel" }, { text: "Skip item", onPress: () => void act(item, () => tripApi.skip(selected!.id, trip.id, item.id)) }])} />) : <SurfaceCard><Text style={styles.itemName}>No items need attention</Text><Text style={styles.meta}>All items are resolved.</Text></SurfaceCard>}<Text style={styles.heading}>Collected{collected.length ? ` · ${collected.length}` : ""}</Text>{collected.map(item => <TripItemCard key={item.id} item={item} busy={busy === item.id} onCollect={() => undefined} onSkip={() => undefined} onUndo={() => void act(item, () => tripApi.undo(selected!.id, trip.id, item.id))} onUnavailable={() => undefined} />)}{skipped.length ? <><Text style={styles.heading}>Skipped · {skipped.length}</Text>{skipped.map(item => <TripItemCard key={item.id} item={item} busy={busy === item.id} onCollect={() => undefined} onSkip={() => undefined} onUndo={() => void act(item, () => tripApi.undo(selected!.id, trip.id, item.id))} onUnavailable={() => undefined} />)}</> : null}{ready ? <SurfaceCard style={styles.completeCard}><Text style={styles.itemName}>Ready to finish?</Text><Text style={styles.meta}>Everything in this trip has been resolved.</Text><PrimaryButton label="Complete shopping" icon="check-circle" onPress={complete} /></SurfaceCard> : <Text style={styles.attention}>{pending.length} item{pending.length === 1 ? "" : "s"} still need attention</Text>}</AppScreen>;
+}
+const styles = StyleSheet.create({ progressCard: { gap: spacing.md, marginBottom: spacing.lg }, progressLine: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, progressText: { ...typography.bodyStrong, color: colors.text }, percent: { ...typography.secondary, color: colors.primary, fontWeight: "800" }, track: { height: 9, borderRadius: radius.round, overflow: "hidden", backgroundColor: colors.primarySubtle }, fill: { height: "100%", borderRadius: radius.round, backgroundColor: colors.success }, remaining: { ...typography.secondary, color: colors.textSecondary }, heading: { ...typography.sectionTitle, color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm }, itemCard: { marginBottom: spacing.sm, gap: spacing.md }, collectedCard: { backgroundColor: "#EDF6EE" }, skippedCard: { backgroundColor: "#FBF5E9" }, itemTop: { flexDirection: "row", gap: spacing.md }, statusIcon: { width: 38, height: 38, borderRadius: radius.round, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" }, successIcon: { backgroundColor: "#CFE6D4" }, skipIcon: { backgroundColor: colors.warningSurface }, itemCopy: { flex: 1 }, itemName: { ...typography.cardTitle, color: colors.text }, mutedName: { color: colors.textSecondary }, meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs }, note: { ...typography.secondary, color: colors.textSecondary, fontStyle: "italic", marginTop: spacing.sm }, actions: { gap: spacing.sm }, stateRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, successText: { ...typography.bodyStrong, color: colors.success }, skipText: { ...typography.bodyStrong, color: colors.warning }, attention: { ...typography.bodyStrong, color: colors.warning, marginTop: spacing.lg }, subCard: { backgroundColor: colors.warningSurface, marginBottom: spacing.md }, subTitle: { ...typography.bodyStrong, color: colors.text }, inlineActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }, completeCard: { marginTop: spacing.xl, marginBottom: spacing.xl, gap: spacing.sm } });
