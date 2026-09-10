@@ -1,51 +1,38 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { RefreshControl, StyleSheet, Text, View } from "react-native";
 
-import { AppHeader, AppScreen, InlineError, LoadingState, PrimaryButton, SurfaceCard } from "../design/components";
-import { colors, radius, spacing, typography } from "../design/theme";
+import { AppHeader, AppScreen, EmptyState, IconButton, InlineError, LoadingState, SectionHeader } from "../design/components";
+import { colors, spacing, typography } from "../design/theme";
 import { useHouseholds } from "../households/household-context";
 import { listApi } from "../lists/api-client";
+import { ShoppingListCard, EmptyArchived } from "../lists/list-components";
+import { tripApi } from "../trips/api-client";
+import type { ShoppingTrip } from "../trips/types";
 
 export function ListsScreen() {
   const router = useRouter();
   const { selected } = useHouseholds();
-  const [name, setName] = useState("");
-  const query = useQuery({ queryKey: ["households", selected?.id, "shopping-lists"], queryFn: () => listApi.lists(selected!.id), enabled: Boolean(selected) });
-  const create = async () => {
-    if (!selected || !name.trim()) return;
-    const list = await listApi.create(selected.id, name.trim());
-    setName("");
-    await query.refetch();
-    router.push(`/lists/${list.id}`);
-  };
+  const [showArchived, setShowArchived] = useState(false);
+  const lists = useQuery({ queryKey: ["households", selected?.id, "shopping-lists"], queryFn: () => listApi.lists(selected!.id), enabled: Boolean(selected) });
+  const archived = useQuery({ queryKey: ["households", selected?.id, "shopping-lists", "archived"], queryFn: () => listApi.lists(selected!.id, true), enabled: Boolean(selected && showArchived) });
+  const activeLists = lists.data ?? [];
+  const activeTrips = useQueries({ queries: activeLists.map((list) => ({ queryKey: ["households", selected?.id, "shopping-lists", list.id, "active-trip"], queryFn: () => tripApi.active(selected!.id, list.id), enabled: Boolean(selected) })) });
+  const tripFor = (index: number): ShoppingTrip | null => activeTrips[index]?.data ?? null;
+  const refresh = () => void Promise.all([lists.refetch(), showArchived ? archived.refetch() : Promise.resolve()]);
   return (
-    <AppScreen keyboardSafe>
-      <AppHeader title="Shopping Lists" subtitle="Plan what your household needs." />
-      {query.isLoading ? <LoadingState rows={3} /> : query.isError ? <InlineError onRetry={() => void query.refetch()} /> : !query.data?.length ? (
-        <SurfaceCard><Text style={styles.emptyTitle}>No shopping lists yet</Text><Text style={styles.emptyBody}>Create your first list below and start adding what the household needs.</Text></SurfaceCard>
+    <AppScreen contentStyle={styles.content} refreshControl={<RefreshControl refreshing={lists.isRefetching} onRefresh={refresh} />}>
+      <AppHeader title="Shopping Lists" subtitle="Plan what your household needs." right={<IconButton icon="plus" label="Create a new shopping list" onPress={() => router.push("/lists/new")} />} />
+      {lists.isLoading ? <LoadingState rows={3} /> : lists.isError ? <InlineError onRetry={() => void lists.refetch()} /> : activeLists.length === 0 ? (
+        <EmptyState icon="list" title="No shopping lists yet" body="Create your first list and start adding what the household needs." action={<Text accessibilityRole="button" onPress={() => router.push("/lists/new")} style={styles.emptyAction}>Create shopping list</Text>} />
       ) : (
-        <View style={styles.list}>{query.data.map((list) => (
-          <Pressable accessibilityRole="button" key={list.id} onPress={() => router.push(`/lists/${list.id}`)}>
-            <SurfaceCard><Text style={styles.name}>{list.name}</Text><Text style={styles.meta}>{list.item_count} item{list.item_count === 1 ? "" : "s"}</Text></SurfaceCard>
-          </Pressable>
-        ))}</View>
+        <><SectionHeader title="Active" /><View style={styles.cards}>{activeLists.map((list, index) => <ShoppingListCard key={list.id} activeTrip={tripFor(index)} list={list} onContinue={() => { const trip = tripFor(index); if (trip) router.push(`/trip/${trip.id}`); }} onOpen={() => router.push(`/lists/${list.id}`)} />)}</View></>
       )}
-      <Text style={styles.label}>New list</Text>
-      <TextInput accessibilityLabel="New list name" placeholder="List name" placeholderTextColor={colors.textSecondary} value={name} onChangeText={setName} style={styles.input} />
-      <View style={styles.action}><PrimaryButton label="Create list" onPress={() => void create()} disabled={!name.trim()} /></View>
+      <SectionHeader actionLabel={showArchived ? "Hide" : "Show"} onAction={() => setShowArchived((value) => !value)} title="Archived" />
+      {showArchived ? archived.isLoading ? <LoadingState rows={2} /> : archived.isError ? <InlineError onRetry={() => void archived.refetch()} /> : archived.data?.length ? <View style={styles.cards}>{archived.data.map((list) => <ShoppingListCard archived key={list.id} list={list} onOpen={() => router.push(`/lists/${list.id}`)} />)}</View> : <EmptyArchived /> : null}
     </AppScreen>
   );
 }
 
-const styles = StyleSheet.create({
-  list: { gap: spacing.sm },
-  name: { ...typography.cardTitle, color: colors.text },
-  meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
-  emptyTitle: { ...typography.cardTitle, color: colors.text },
-  emptyBody: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  label: { ...typography.bodyStrong, color: colors.text, marginTop: spacing.xxl, marginBottom: spacing.sm },
-  input: { minHeight: 48, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, paddingHorizontal: spacing.md, ...typography.body, color: colors.text },
-  action: { marginTop: spacing.md }
-});
+const styles = StyleSheet.create({ content: { paddingBottom: spacing.huge }, cards: { gap: spacing.md }, emptyAction: { ...typography.bodyStrong, color: colors.primary, paddingVertical: spacing.md } });

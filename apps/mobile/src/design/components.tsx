@@ -1,4 +1,4 @@
-import type { ComponentProps, PropsWithChildren, ReactNode } from "react";
+import type { ComponentProps, PropsWithChildren, ReactElement, ReactNode } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import {
   ActivityIndicator,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type RefreshControlProps,
   type StyleProp,
   type ViewStyle
 } from "react-native";
@@ -23,14 +24,16 @@ type AppScreenProps = PropsWithChildren<{
   keyboardSafe?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
   testID?: string;
+  refreshControl?: ReactElement<RefreshControlProps>;
 }>;
 
-export function AppScreen({ children, scroll = true, keyboardSafe = false, contentStyle, testID }: AppScreenProps) {
+export function AppScreen({ children, scroll = true, keyboardSafe = false, contentStyle, refreshControl, testID }: AppScreenProps) {
   const body = scroll ? (
     <ScrollView
       automaticallyAdjustKeyboardInsets
       contentContainerStyle={[styles.screenContent, contentStyle]}
       keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}
       showsVerticalScrollIndicator={false}
       testID={testID}
     >
@@ -59,6 +62,16 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
         {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
       </View>
       {right}
+    </View>
+  );
+}
+
+export function BackHeader({ title, subtitle, onBack, right }: { title: string; subtitle?: string; onBack: () => void; right?: ReactNode }) {
+  return (
+    <View style={styles.backHeader}>
+      <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} style={styles.backButton}><Feather color={colors.text} name="arrow-left" size={iconSizes.md} /></Pressable>
+      <View style={styles.headerCopy}><Text numberOfLines={1} style={styles.screenTitle}>{title}</Text>{subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}</View>
+      {right ?? <View style={styles.backButtonPlaceholder} />}
     </View>
   );
 }
@@ -175,6 +188,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxxl, flexGrow: 1 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md },
+  backHeader: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
+  backButton: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center" },
+  backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
   headerCopy: { flex: 1 },
   screenTitle: { ...typography.screenTitle, color: colors.text },
   headerSubtitle: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },

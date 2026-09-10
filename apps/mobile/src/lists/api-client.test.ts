@@ -22,4 +22,13 @@ describe("shopping list API client", () => {
       expect.objectContaining({ method: "POST" })
     );
   });
+
+  it("supports focused list management actions", async () => {
+    await listApi.rename("h1", "l1", "Weekend run");
+    await listApi.archive("h1", "l1");
+    await listApi.updateItem("h1", "l1", "i1", { requested_quantity: 3 });
+    expect(authApiClient.authenticatedRequest).toHaveBeenNthCalledWith(3, "/households/h1/shopping-lists/l1", expect.objectContaining({ method: "PATCH" }));
+    expect(authApiClient.authenticatedRequest).toHaveBeenNthCalledWith(4, "/households/h1/shopping-lists/l1", expect.objectContaining({ method: "DELETE" }));
+    expect(authApiClient.authenticatedRequest).toHaveBeenNthCalledWith(5, "/households/h1/shopping-lists/l1/items/i1", expect.objectContaining({ method: "PATCH" }));
+  });
 });
