@@ -33,6 +33,14 @@ export class PushNotificationApiClient {
       { method: "POST" }
     );
   }
+
+  createRequest(householdId: string, tripId: string, itemId: string, proposal: Record<string, unknown>) {
+    return this.client.authenticatedRequest<SubstitutionRequest>(`/households/${householdId}/trips/${tripId}/items/${itemId}/substitutions`, { method: "POST", body: JSON.stringify(proposal) });
+  }
+
+  applyPreferred(householdId: string, tripId: string, itemId: string) {
+    return this.client.authenticatedRequest(`/households/${householdId}/trips/${tripId}/items/${itemId}/apply-preferred-substitute`, { method: "POST" });
+  }
 }
 
 export const pushNotificationApi = new PushNotificationApiClient();

@@ -144,10 +144,7 @@ describe("push notification lifecycle", () => {
     } as never);
     const client = new FakeClient();
     wrapper(client, <NotificationCoordinator />);
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith({
-      pathname: "/trip/[tripId]",
-      params: { tripId: "trip-1", substitutionId: "substitution-1" }
-    }));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/substitutions/substitution-1"));
     expect(client.requests.some(({ path }) => path === "/households")).toBe(true);
   });
 

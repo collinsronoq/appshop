@@ -102,7 +102,7 @@ function Attention({ items }: { items: SubstitutionRequest[] }) {
   return (
     <>
       <SectionHeader title="Needs your attention" />
-      <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/trip/[tripId]", params: { tripId: item.shopping_trip_id, substitutionId: item.id } })} style={({ pressed }) => [styles.attentionCard, pressed ? styles.pressed : null]}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(`/substitutions/${item.id}`)} style={({ pressed }) => [styles.attentionCard, pressed ? styles.pressed : null]}>
         <View style={styles.attentionIcon}><Feather color={colors.warning} name="repeat" size={iconSizes.md} /></View>
         <View style={styles.flex}><Text style={styles.cardTitle}>Replacement approval</Text><Text numberOfLines={2} style={styles.secondary}>{details}</Text></View>
         <Feather color={colors.warning} name="chevron-right" size={iconSizes.md} />

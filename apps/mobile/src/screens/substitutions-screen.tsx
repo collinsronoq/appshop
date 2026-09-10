@@ -1,0 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { Pressable, StyleSheet, Text } from "react-native";
+import { AppScreen, BackHeader, EmptyState, InlineError, LoadingState, SurfaceCard } from "../design/components";
+import { colors, spacing, typography } from "../design/theme";
+import { useAuth } from "../auth/auth-context";
+import { useHouseholds } from "../households/household-context";
+import { pushNotificationApi } from "../notifications/api-client";
+export function SubstitutionsScreen() { const router = useRouter(); const { user } = useAuth(); const { selected } = useHouseholds(); const q = useQuery({ queryKey: ["households", selected?.id, "substitutions", "pending"], queryFn: () => pushNotificationApi.listPendingSubstitutions(selected!.id), enabled: Boolean(selected) }); const items = (q.data ?? []).filter(item => item.requested_by_user_id !== user?.id); return <AppScreen><BackHeader title="Pending approvals" subtitle="Replacement requests from your household." onBack={() => router.back()} />{q.isLoading ? <LoadingState rows={3} /> : q.isError ? <InlineError onRetry={() => void q.refetch()} /> : items.length ? items.map(item => <Pressable key={item.id} onPress={() => router.push(`/substitutions/${item.id}`)}><SurfaceCard style={styles.card}><Text style={styles.title}>Replacement request</Text><Text style={styles.body}>{item.proposed_name}</Text><Text style={styles.meta}>Requested by {item.requested_by_user_id}</Text><Text style={styles.review}>Review request →</Text></SurfaceCard></Pressable>) : <EmptyState icon="check-circle" title="No pending approvals" body="Replacement requests from your household will appear here." />}</AppScreen>; }
+const styles = StyleSheet.create({ card: { marginBottom: spacing.sm }, title: { ...typography.caption, color: colors.textSecondary, textTransform: "uppercase", fontWeight: "700" }, body: { ...typography.cardTitle, color: colors.text, marginTop: spacing.xs }, meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs }, review: { ...typography.bodyStrong, color: colors.primary, marginTop: spacing.md } });

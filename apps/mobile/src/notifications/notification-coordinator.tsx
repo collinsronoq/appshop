@@ -134,7 +134,7 @@ export function NotificationCoordinator() {
           queryClient.invalidateQueries({ queryKey: ["households", data.household_id, "substitutions", data.substitution_id] }),
           queryClient.invalidateQueries({ queryKey: ["households", data.household_id, "trips", data.trip_id] })
         ]);
-        router.push({ pathname: "/trip/[tripId]", params: { tripId: data.trip_id, substitutionId: data.substitution_id } });
+        router.push(`/substitutions/${data.substitution_id}`);
       } finally {
         processingResponse.current = false;
         setPendingResponse(null);
