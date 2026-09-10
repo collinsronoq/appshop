@@ -1,41 +1,10 @@
 import Feather from "@expo/vector-icons/Feather";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import { AppHeader, AppScreen, SurfaceCard } from "../../../src/design/components";
+import { AppHeader, AppScreen, EmptyState, InlineError, LoadingState, SurfaceCard } from "../../../src/design/components";
 import { colors, iconSizes, radius, spacing, typography } from "../../../src/design/theme";
-
-const destinations = [
-  { title: "Purchases", body: "View everything the household has bought.", icon: "shopping-bag" as const, href: "/purchases" as const },
-  { title: "Purchasing memory", body: "See recently and frequently purchased products.", icon: "repeat" as const, href: "/purchasing-memory" as const }
-];
-
-export default function HistoryScreen() {
-  const router = useRouter();
-  return (
-    <AppScreen>
-      <AppHeader title="History" subtitle="Your household’s completed shopping activity." />
-      <View style={styles.list}>
-        {destinations.map((item) => (
-          <Pressable accessibilityRole="button" key={item.title} onPress={() => router.push(item.href)} style={({ pressed }) => pressed ? styles.pressed : undefined}>
-            <SurfaceCard style={styles.card}>
-              <View style={styles.icon}><Feather color={colors.primary} name={item.icon} size={iconSizes.md} /></View>
-              <View style={styles.copy}><Text style={styles.title}>{item.title}</Text><Text style={styles.body}>{item.body}</Text></View>
-              <Feather color={colors.textSecondary} name="chevron-right" size={iconSizes.md} />
-            </SurfaceCard>
-          </Pressable>
-        ))}
-      </View>
-    </AppScreen>
-  );
-}
-
-const styles = StyleSheet.create({
-  list: { gap: spacing.md, marginTop: spacing.md },
-  card: { minHeight: 92, flexDirection: "row", alignItems: "center", gap: spacing.md },
-  icon: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.primarySubtle },
-  copy: { flex: 1 },
-  title: { ...typography.cardTitle, color: colors.text },
-  body: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
-  pressed: { opacity: 0.78 }
-});
+import { useHouseholds } from "../../../src/households/household-context";
+import { purchasesApi } from "../../../src/purchases/api-client";
+export default function HistoryScreen() { const router = useRouter(); const { selected } = useHouseholds(); const q = useQuery({ queryKey: ["households", selected?.id, "purchases", "preview"], queryFn: () => purchasesApi.list(selected!.id, 0), enabled: Boolean(selected) }); return <AppScreen><AppHeader title="History" subtitle="Keep track of what your household buys." />{q.isLoading ? <LoadingState rows={3} /> : q.isError ? <InlineError onRetry={() => void q.refetch()} /> : <><Pressable accessibilityRole="button" onPress={() => router.push("/purchases")}><SurfaceCard style={styles.card}><View style={styles.icon}><Feather color={colors.primary} name="file-text" size={iconSizes.md} /></View><View style={styles.copy}><Text style={styles.title}>Purchase History</Text><Text style={styles.body}>See everything your household has bought, organized by date.</Text><Text style={styles.meta}>{q.data?.length ?? 0} recent purchases</Text></View><Feather color={colors.textSecondary} name="chevron-right" size={iconSizes.md} /></SurfaceCard></Pressable><Pressable accessibilityRole="button" onPress={() => router.push("/purchasing-memory")}><SurfaceCard style={styles.card}><View style={styles.icon}><Feather color={colors.primary} name="repeat" size={iconSizes.md} /></View><View style={styles.copy}><Text style={styles.title}>Purchasing Memory</Text><Text style={styles.body}>Quickly find things your household buys repeatedly.</Text><Text style={styles.meta}>Recent and frequent products</Text></View><Feather color={colors.textSecondary} name="chevron-right" size={iconSizes.md} /></SurfaceCard></Pressable>{q.data?.length ? <><Text style={styles.recent}>Recent activity</Text>{q.data.slice(0, 3).map(item => <Text key={item.id} style={styles.activity}>{item.purchased_name_snapshot}</Text>)}</> : <EmptyState icon="clock" title="No purchase activity yet" body="Complete a shopping trip to start building your household history." />}</>}</AppScreen>; }
+const styles = StyleSheet.create({ card: { minHeight: 112, flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.md }, icon: { width: 46, height: 46, borderRadius: radius.md, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" }, copy: { flex: 1 }, title: { ...typography.cardTitle, color: colors.text }, body: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs }, meta: { ...typography.caption, color: colors.primary, marginTop: spacing.sm }, recent: { ...typography.sectionTitle, color: colors.text, marginTop: spacing.xl, marginBottom: spacing.sm }, activity: { ...typography.body, color: colors.text, paddingVertical: spacing.sm } });

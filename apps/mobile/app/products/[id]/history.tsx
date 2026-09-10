@@ -1,0 +1,9 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { View } from "react-native";
+import { AppScreen, BackHeader, EmptyState, InlineError, LoadingState, SectionHeader } from "../../../src/design/components";
+import { useHouseholds } from "../../../src/households/household-context";
+import { productApi } from "../../../src/products/api-client";
+import { purchasesApi } from "../../../src/purchases/api-client";
+import { PurchaseRow, dateLabel } from "../../../src/purchases/purchase-components";
+export default function ProductHistory() { const { id } = useLocalSearchParams<{ id: string }>(); const router = useRouter(); const { selected } = useHouseholds(); const product = useQuery({ queryKey: ["households", selected?.id, "products", id], queryFn: () => productApi.get(selected!.id, id), enabled: Boolean(selected && id) }); const q = useQuery({ queryKey: ["households", selected?.id, "products", id, "purchase-history"], queryFn: () => purchasesApi.product(selected!.id, id), enabled: Boolean(selected && id) }); if (q.isLoading || product.isLoading) return <AppScreen><LoadingState rows={4} /></AppScreen>; if (q.isError || product.isError) return <AppScreen><InlineError onRetry={() => void q.refetch()} /></AppScreen>; const groups: Record<string, typeof q.data> = {}; (q.data ?? []).forEach(item => { const key = dateLabel(item.purchased_at); groups[key] = [...(groups[key] ?? []), item]; }); return <AppScreen><BackHeader title={product.data?.name ?? "Product history"} subtitle="Purchase history" onBack={() => router.back()} />{q.data?.length ? Object.entries(groups).map(([label, items]) => <View key={label}><SectionHeader title={label} />{items?.map(item => <PurchaseRow key={item.id} purchase={item} />)}</View>) : <EmptyState icon="clock" title="No purchases recorded" body="No purchases recorded for this product yet." />}</AppScreen>; }
