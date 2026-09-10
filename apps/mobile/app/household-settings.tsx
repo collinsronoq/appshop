@@ -1,0 +1,9 @@
+import { useState } from "react";
+import { useRouter } from "expo-router";
+import { StyleSheet, Text, TextInput } from "react-native";
+import { AppScreen, BackHeader, PrimaryButton, SurfaceCard } from "../src/design/components";
+import { colors, radius, spacing, typography } from "../src/design/theme";
+import { useHouseholds } from "../src/households/household-context";
+import { householdApiClient } from "../src/households/api-client";
+export default function HouseholdSettings() { const router = useRouter(); const { selected } = useHouseholds(); const [name, setName] = useState(selected?.name ?? ""); const [saving, setSaving] = useState(false); const [error, setError] = useState(""); const save = async () => { if (!selected || !name.trim()) { setError("Household name is required."); return; } setSaving(true); try { await householdApiClient.rename(selected.id, name.trim()); router.back(); } catch (e) { setError(e instanceof Error ? e.message : "Couldn’t rename household."); } finally { setSaving(false); } }; return <AppScreen keyboardSafe><BackHeader title="Rename household" onBack={() => router.back()} /><SurfaceCard><Text style={styles.label}>Household name</Text><TextInput accessibilityLabel="Household name" autoFocus value={name} onChangeText={setName} style={styles.input} />{error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}<PrimaryButton label="Save" loading={saving} disabled={!name.trim()} onPress={() => void save()} /></SurfaceCard></AppScreen>; }
+const styles = StyleSheet.create({ label: { ...typography.bodyStrong, color: colors.text, marginBottom: spacing.sm }, input: { minHeight: 50, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, ...typography.body, color: colors.text, marginBottom: spacing.md }, error: { ...typography.secondary, color: colors.danger, marginBottom: spacing.md } });

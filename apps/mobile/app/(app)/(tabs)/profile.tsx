@@ -1,6 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../../src/auth/auth-context";
 import { AppHeader, AppScreen, SurfaceCard } from "../../../src/design/components";
@@ -25,13 +25,13 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { selected } = useHouseholds();
-  const initials = user?.display_name?.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() ?? "U";
+  const initials = (user?.display_name || user?.email || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <AppScreen>
       <AppHeader title="Profile" />
       <SurfaceCard style={styles.identityCard}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></View>
-        <View style={styles.flex}><Text style={styles.name}>{user?.display_name}</Text><Text style={styles.email}>{user?.email}</Text></View>
+        <View style={styles.flex}><Text style={styles.name}>{user?.display_name || user?.email}</Text><Text style={styles.email}>{user?.display_name ? user.email : "Account"}</Text></View>
       </SurfaceCard>
 
       <Text style={styles.sectionTitle}>Household</Text>
@@ -43,11 +43,12 @@ export default function ProfileScreen() {
         <ProfileRow icon="users" label="Members" onPress={() => router.push("/members")} />
         {selected?.role === "owner" ? <ProfileRow icon="user-plus" label="Invite member" onPress={() => router.push("/invite")} /> : null}
         <ProfileRow icon="repeat" label="Switch household" onPress={() => router.push("/households")} />
+        {selected?.role === "owner" ? <ProfileRow icon="edit-2" label="Rename household" onPress={() => router.push("/household-settings")} /> : null}
       </SurfaceCard>
 
       <Text style={styles.sectionTitle}>App settings</Text>
       <SurfaceCard style={styles.group}>
-        <ProfileRow icon="bell" label="Notifications" onPress={() => Alert.alert("Notifications", "AppShop uses your device notification permission for household replacement decisions. You can change permission in system settings.")} />
+        <ProfileRow icon="bell" label="Notifications" onPress={() => router.push("/notifications")} />
       </SurfaceCard>
 
       <Text style={styles.sectionTitle}>Account</Text>
