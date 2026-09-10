@@ -1,18 +1,19 @@
 import { type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { Text } from "react-native";
 
 import { AuthApiError, type AuthClient } from "./api-client";
 import { AuthProvider, useAuth } from "./auth-context";
 import { HouseholdProvider } from "../households/household-context";
 import { HouseholdApiClient } from "../households/api-client";
 import type { LoginInput, RegisterInput, User } from "./types";
-import AuthenticatedHomeScreen from "../../app/(app)/index";
+import { HomeScreen as AuthenticatedHomeScreen } from "../home/home-screen";
 import { LoginScreen } from "../screens/login-screen";
 import { RegisterScreen } from "../screens/register-screen";
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({})
 }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -57,19 +58,30 @@ class FakeAuthClient implements AuthClient {
     if (path === "/households") {
       return [{ id: "h1", name: "Home", role: "owner", member_count: 1, created_at: "2026-09-08T12:00:00Z" }] as T;
     }
+    if (path.endsWith("/shopping-lists") || path.includes("/substitutions")) {
+      return [] as T;
+    }
+    if (path.includes("/purchasing-memory/")) {
+      return { items: [] } as T;
+    }
     return USER as T;
   }
 }
 
-function SessionSwitch({ authScreen }: { authScreen: ReactNode }) {
+function LogoutControl() {
+  const { logout } = useAuth();
+  return <Text onPress={() => void logout()}>Log out</Text>;
+}
+
+function SessionSwitch({ authScreen, authenticatedScreen }: { authScreen: ReactNode; authenticatedScreen: ReactNode }) {
   const { status } = useAuth();
   if (status === "loading") {
     return null;
   }
-  return status === "authenticated" ? <AuthenticatedHomeScreen /> : authScreen;
+  return status === "authenticated" ? authenticatedScreen : authScreen;
 }
 
-function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />) {
+function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />, authenticatedScreen: ReactNode = <AuthenticatedHomeScreen />) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } }
   });
@@ -77,7 +89,7 @@ function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />)
     <QueryClientProvider client={queryClient}>
       <AuthProvider client={client}>
         <HouseholdProvider client={new HouseholdApiClient(client)}>
-          <SessionSwitch authScreen={authScreen} />
+          <SessionSwitch authScreen={authScreen} authenticatedScreen={authenticatedScreen} />
         </HouseholdProvider>
       </AuthProvider>
     </QueryClientProvider>
@@ -95,7 +107,8 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(await screen.findByLabelText("Email"), "jane@example.com");
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
     fireEvent.press(screen.getByText("Sign in"));
-    expect(await screen.findByText("Signed in as Jane")).toBeTruthy();
+    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
   it("enters the authenticated shell after registration", async () => {
@@ -104,7 +117,8 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(screen.getByLabelText("Email"), "jane@example.com");
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
     fireEvent.press(screen.getByText("Create account"));
-    expect(await screen.findByText("Signed in as Jane")).toBeTruthy();
+    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
   it("displays a generic invalid-login error", async () => {
@@ -125,13 +139,14 @@ describe("mobile authentication flow", () => {
     const client = new FakeAuthClient();
     client.restoredUser = USER;
     renderFlow(client);
-    expect(await screen.findByText("Signed in as Jane")).toBeTruthy();
+    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
   it("returns to login after logout", async () => {
     const client = new FakeAuthClient();
     client.restoredUser = USER;
-    renderFlow(client);
+    renderFlow(client, <LoginScreen />, <LogoutControl />);
     fireEvent.press(await screen.findByText("Log out"));
     await waitFor(() => expect(client.logoutCalls).toBe(1));
     expect(await screen.findByText("Welcome back")).toBeTruthy();

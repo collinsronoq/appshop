@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 const NotificationCoordinator = lazy(async () => {
   const module = await import("./notification-coordinator");
@@ -7,7 +8,7 @@ const NotificationCoordinator = lazy(async () => {
 });
 
 export function NotificationCoordinatorHost() {
-  if (Constants.appOwnership === "expo") {
+  if (Platform.OS === "web" || Constants.appOwnership === "expo") {
     return null;
   }
 

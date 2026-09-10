@@ -21,6 +21,12 @@ export class PushNotificationApiClient {
     );
   }
 
+  listPendingSubstitutions(householdId: string) {
+    return this.client.authenticatedRequest<SubstitutionRequest[]>(
+      `/households/${householdId}/substitutions?status=pending`
+    );
+  }
+
   decide(householdId: string, substitutionId: string, decision: "approve" | "reject") {
     return this.client.authenticatedRequest<SubstitutionRequest>(
       `/households/${householdId}/substitutions/${substitutionId}/${decision}`,

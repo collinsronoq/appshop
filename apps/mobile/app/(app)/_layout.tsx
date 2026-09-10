@@ -1,4 +1,4 @@
-import { Redirect, Slot } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 
 import { useAuth } from "../../src/auth/auth-context";
 import { LoadingScreen } from "../../src/components/loading-screen";
@@ -11,5 +11,10 @@ export default function AppLayout() {
   if (status === "unauthenticated") {
     return <Redirect href="/login" />;
   }
-  return <Slot />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="members" />
+    </Stack>
+  );
 }

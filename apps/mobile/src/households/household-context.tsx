@@ -30,7 +30,15 @@ export function HouseholdProvider({ children, client = householdApiClient }: Pro
     if (!first) return;
     if (!selectedId || !items.some((item) => item.id === selectedId)) void selectedHouseholdStorage.set(first.id).then(() => setSelectedId(first.id));
   }, [query.data, selectedId]);
-  const selectHousehold = useCallback(async (id: string) => { setSelectedId(id); await selectedHouseholdStorage.set(id); }, []);
+  const selectHousehold = useCallback(async (id: string) => {
+    if (id === selectedId) return;
+    if (selectedId) {
+      await queryClient.cancelQueries({ queryKey: ["households", selectedId] });
+    }
+    setSelectedId(id);
+    await selectedHouseholdStorage.set(id);
+    await queryClient.invalidateQueries({ queryKey: ["households", id] });
+  }, [queryClient, selectedId]);
   const create = useMutation({ mutationFn: (name: string) => client.create(name), onSuccess: async (created) => { await queryClient.invalidateQueries({ queryKey: ["households"] }); await selectHousehold(created.id); } });
   const effectiveId = status === "authenticated" ? selectedId : null;
   const value = useMemo(() => ({ households: query.data ?? [], selectedId: effectiveId, selected: (query.data ?? []).find((x) => x.id === effectiveId) ?? null, loading: query.isLoading || status === "loading", selectHousehold, createHousehold: (name: string) => create.mutateAsync(name) }), [query.data, query.isLoading, effectiveId, status, selectHousehold, create]);

@@ -9,7 +9,7 @@ export default function AuthLayout() {
     return <LoadingScreen />;
   }
   if (status === "authenticated") {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
   return <Slot />;
 }

@@ -28,5 +28,6 @@ Recommended reading order:
 22. `21-trip-completion-purchases.md`
 23. `22-purchasing-memory.md`
 24. `23-push-notifications.md`
+25. `ui/01-app-shell-home.md`
 
 The implementation plan is designed to be executed unit by unit with Codex.
