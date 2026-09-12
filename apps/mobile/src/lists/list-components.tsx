@@ -57,14 +57,13 @@ export function ShoppingListCard({
 }
 
 export function ListItemRow({ item, onMenu }: { item: ShoppingListItem; onMenu: () => void }) {
-  const metadata = [item.brand, item.variant, formatSize(item.size_value, item.size_unit)].filter(Boolean).join(" · ");
+  const metadata = [...[item.brand, item.variant, formatSize(item.size_value, item.size_unit)].filter(Boolean), `Qty ${formatQuantity(item.requested_quantity)}`].join(" · ");
   return (
     <View style={styles.itemRow}>
       <View style={styles.itemIcon}><Feather color={colors.primary} name={item.household_product_id ? "package" : "edit-3"} size={18} /></View>
       <View style={styles.flex}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        {metadata ? <Text style={styles.meta}>{metadata}</Text> : null}
-        <Text style={styles.meta}>Qty {formatQuantity(item.requested_quantity)}</Text>
+        <Text numberOfLines={2} style={styles.itemName}>{item.name}</Text>
+        <Text numberOfLines={2} style={styles.meta}>{metadata}</Text>
         {item.notes ? <Text numberOfLines={2} style={styles.note}>{item.notes}</Text> : null}
       </View>
       <Pressable accessibilityLabel={`Actions for ${item.name}`} accessibilityRole="button" onPress={onMenu} style={styles.menuButton}><Feather color={colors.textSecondary} name="more-vertical" size={iconSizes.md} /></Pressable>
@@ -79,9 +78,9 @@ export function EmptyArchived() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.76 },
-  listCard: { padding: spacing.lg },
+  listCard: { padding: spacing.md },
   archivedCard: { opacity: 0.78 },
-  cardPress: { gap: spacing.md },
+  cardPress: { gap: spacing.sm },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   listName: { ...typography.cardTitle, color: colors.text, fontSize: 17 },
   meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
@@ -92,8 +91,8 @@ const styles = StyleSheet.create({
   fill: { height: "100%", backgroundColor: colors.success, borderRadius: radius.round },
   continueButton: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.md, marginTop: spacing.md },
   continueText: { ...typography.bodyStrong, color: colors.surface },
-  itemRow: { minHeight: 88, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  itemIcon: { width: 38, height: 38, borderRadius: radius.md, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
+  itemRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  itemIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
   itemName: { ...typography.cardTitle, color: colors.text },
   note: { ...typography.secondary, color: colors.textSecondary, fontStyle: "italic", marginTop: spacing.xs },
   menuButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },

@@ -58,7 +58,7 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
   return (
     <View style={styles.header}>
       <View style={styles.headerCopy}>
-        <Text style={styles.screenTitle}>{title}</Text>
+        <Text numberOfLines={2} style={styles.screenTitle}>{title}</Text>
         {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
       </View>
       {right}
@@ -97,9 +97,10 @@ type ButtonProps = {
   loading?: boolean;
   fullWidth?: boolean;
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
-function Button({ label, onPress, icon, disabled, loading, fullWidth = true, compact = false, variant }: ButtonProps & { variant: "primary" | "secondary" | "danger" }) {
+function Button({ label, onPress, icon, disabled, loading, fullWidth = true, compact = false, style, variant }: ButtonProps & { variant: "primary" | "secondary" | "danger" }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -112,7 +113,8 @@ function Button({ label, onPress, icon, disabled, loading, fullWidth = true, com
         variant === "primary" ? styles.primaryButton : styles.secondaryButton,
         variant === "danger" ? styles.dangerButton : null,
         pressed && !disabled ? styles.pressed : null,
-        disabled ? styles.disabled : null
+        disabled ? styles.disabled : null,
+        style
       ]}
     >
       {loading ? <ActivityIndicator color={variant === "primary" ? colors.surface : colors.primary} /> : (
@@ -129,8 +131,8 @@ export const PrimaryButton = (props: ButtonProps) => <Button {...props} variant=
 export const SecondaryButton = (props: ButtonProps) => <Button {...props} variant="secondary" />;
 export const DestructiveButton = (props: ButtonProps) => <Button {...props} variant="danger" />;
 
-export function TertiaryButton({ label, onPress, icon, destructive = false }: { label: string; onPress: () => void; icon?: IconName; destructive?: boolean }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={styles.tertiaryButton}>{icon ? <Feather color={destructive ? colors.danger : colors.primary} name={icon} size={iconSizes.sm} /> : null}<Text style={[styles.tertiaryText, destructive ? styles.dangerText : null]}>{label}</Text></Pressable>;
+export function TertiaryButton({ label, onPress, icon, destructive = false, style }: { label: string; onPress: () => void; icon?: IconName; destructive?: boolean; style?: StyleProp<ViewStyle> }) {
+  return <Pressable accessibilityRole="button" onPress={onPress} style={[styles.tertiaryButton, style]}>{icon ? <Feather color={destructive ? colors.danger : colors.primary} name={icon} size={iconSizes.sm} /> : null}<Text style={[styles.tertiaryText, destructive ? styles.dangerText : null]}>{label}</Text></Pressable>;
 }
 
 export function IconButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
@@ -192,15 +194,15 @@ export function QuickAction({ icon, label, onPress }: { icon: IconName; label: s
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
-  screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxxl, flexGrow: 1 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.md },
-  backHeader: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
-  backButton: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center" },
+  screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.xxl, flexGrow: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.sm },
+  backHeader: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm },
+  backButton: { width: touchTargets.minimum, height: touchTargets.minimum, alignItems: "center", justifyContent: "center" },
   backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
-  headerCopy: { flex: 1 },
+  headerCopy: { flex: 1, minWidth: 0 },
   screenTitle: { ...typography.screenTitle, color: colors.text },
   headerSubtitle: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
-  sectionHeader: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.lg },
+  sectionHeader: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
   sectionTitle: { ...typography.sectionTitle, color: colors.text },
   sectionAction: { minHeight: touchTargets.minimum, justifyContent: "center", paddingLeft: spacing.lg },
   sectionActionText: { ...typography.secondary, color: colors.primary, fontWeight: "700" },
