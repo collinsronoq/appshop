@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, status
 
 from app.auth.dependencies import CurrentUser
+from app.core.errors import ApiError
 from app.households.dependencies import HouseholdAccessDependency
 
 from .dependencies import ShoppingServiceDependency
@@ -88,7 +89,12 @@ async def create_list(
 async def get_list(
     list_id: UUID, access: HouseholdAccessDependency, service: ShoppingServiceDependency
 ):
-    return detail(await service.repo.get_list(access.household.id, list_id))
+    listing = await service.repo.get_list(access.household.id, list_id)
+    if not listing:
+        raise ApiError(
+            status_code=404, code="SHOPPING_LIST_NOT_FOUND", message="Shopping list not found."
+        )
+    return detail(listing)
 
 
 @router.patch("/households/{household_id}/shopping-lists/{list_id}", response_model=ListDetail)

@@ -70,3 +70,22 @@ async def test_ad_hoc_item_and_duplicate_product_conflict(api_client: httpx.Asyn
         base, headers=auth(user), json={"name": "Tomatoes", "requested_quantity": 6}
     )
     assert custom.status_code == 201 and custom.json()["items"][0]["name"] == "Tomatoes"
+
+
+async def test_same_user_cross_household_list_id_is_not_an_internal_error(
+    api_client: httpx.AsyncClient,
+) -> None:
+    user = await register(api_client, "cross-household-list@example.com")
+    alpha = await create_household(api_client, user, "Alpha")
+    beta = await create_household(api_client, user, "Beta")
+    listing = await api_client.post(
+        f"/api/v1/households/{alpha['id']}/shopping-lists",
+        headers=auth(user),
+        json={"name": "Alpha only"},
+    )
+    response = await api_client.get(
+        f"/api/v1/households/{beta['id']}/shopping-lists/{listing.json()['id']}",
+        headers=auth(user),
+    )
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "SHOPPING_LIST_NOT_FOUND"
