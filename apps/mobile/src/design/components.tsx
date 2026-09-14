@@ -147,11 +147,11 @@ export function SurfaceCard({ children, style, accessibilityLabel }: PropsWithCh
   return <View accessibilityLabel={accessibilityLabel} style={[styles.card, style]}>{children}</View>;
 }
 
-export function InlineError({ onRetry }: { onRetry?: () => void }) {
+export function InlineError({ message = "Couldn't load this section.", onRetry }: { message?: string; onRetry?: () => void }) {
   return (
     <View accessibilityRole="alert" style={styles.inlineState}>
       <Feather color={colors.danger} name="alert-circle" size={iconSizes.sm} />
-      <Text style={styles.inlineErrorText}>Couldn&apos;t load this section.</Text>
+      <Text style={styles.inlineErrorText}>{message}</Text>
       {onRetry ? <Pressable onPress={onRetry}><Text style={styles.retry}>Retry</Text></Pressable> : null}
     </View>
   );

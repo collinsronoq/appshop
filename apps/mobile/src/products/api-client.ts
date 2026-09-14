@@ -2,9 +2,10 @@ import { authApiClient } from "../auth/api-client";
 import type { HouseholdProduct, ProductCategory } from "./types";
 export const productApi = {
   list: (id: string, params = "") => authApiClient.authenticatedRequest<HouseholdProduct[]>(`/households/${id}/products${params}`),
-  listFiltered: (id: string, query: string, category?: string, archived = false) => {
+  listFiltered: async (id: string, query: string, category?: string, archived = false) => {
     const params = new URLSearchParams(); if (query) params.set("query", query); if (category) params.set("category", category); if (archived) params.set("archived", "true");
-    const suffix = params.toString(); return authApiClient.authenticatedRequest<HouseholdProduct[]>(`/households/${id}/products${suffix ? `?${suffix}` : ""}`);
+    const suffix = params.toString(); const products = await authApiClient.authenticatedRequest<HouseholdProduct[]>(`/households/${id}/products${suffix ? `?${suffix}` : ""}`);
+    return archived ? products.filter((product) => Boolean(product.archived_at)) : products;
   },
   get: (householdId: string, id: string) => authApiClient.authenticatedRequest<HouseholdProduct>(`/households/${householdId}/products/${id}`),
   categories: () => authApiClient.authenticatedRequest<ProductCategory[]>("/product-categories"),

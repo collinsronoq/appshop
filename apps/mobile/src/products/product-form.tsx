@@ -93,7 +93,8 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
 }
 
 function Field({ label, ...props }: { label: string } & ComponentProps<typeof TextInput>) {
-  return <View style={styles.field}><Text style={styles.label}>{label}</Text><TextInput {...props} style={[styles.input, props.multiline ? styles.multiline : null]} /></View>;
+  const accessibilityLabel = props.accessibilityLabel ?? label.replace(/\s*\*$/, "");
+  return <View style={styles.field}><Text style={styles.label}>{label}</Text><TextInput {...props} accessibilityLabel={accessibilityLabel} style={[styles.input, props.multiline ? styles.multiline : null]} /></View>;
 }
 
 const styles = StyleSheet.create({
