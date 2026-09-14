@@ -1,15 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useState, type ComponentProps } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppScreen, BackHeader, InlineError, LoadingState, PrimaryButton, SecondaryButton } from "../design/components";
 import { colors, radius, spacing, typography } from "../design/theme";
 import { useHouseholds } from "../households/household-context";
-import { productApi } from "./api-client";
+import { productApi, resolveProductImageUrl } from "./api-client";
+import type { ProductImageUpload } from "./api-client";
 import type { HouseholdProduct } from "./types";
 
-export function ProductForm({ initial, title, onSave }: { initial?: HouseholdProduct; title: string; onSave: (data: Record<string, unknown>) => Promise<void> }) {
+export function ProductForm({ initial, title, onSave }: { initial?: HouseholdProduct; title: string; onSave: (data: Record<string, unknown>, image?: ProductImageUpload) => Promise<void> }) {
   const router = useRouter();
   const { selected } = useHouseholds();
   const [name, setName] = useState(initial?.name ?? "");
@@ -20,9 +22,28 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
   const [categoryId, setCategoryId] = useState(initial?.category?.id ?? "");
   const [quantity, setQuantity] = useState(String(initial?.usual_quantity ?? 1));
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [image, setImage] = useState<ProductImageUpload | undefined>();
+  const [failedPreviewUri, setFailedPreviewUri] = useState<string>();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const categories = useQuery({ queryKey: ["product-categories"], queryFn: productApi.categories });
+  const previewUri = image?.uri ?? resolveProductImageUrl(initial?.image_url);
+
+  const pickImage = async () => {
+    setError("");
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError("Photo access was not granted. You can still save the product without a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, quality: 0.85 });
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      if (!asset) return;
+      setFailedPreviewUri(undefined);
+      setImage({ uri: asset.uri, fileName: asset.fileName, mimeType: asset.mimeType });
+    }
+  };
 
   const save = async () => {
     if (!name.trim()) { setError("Product name is required."); return; }
@@ -39,7 +60,7 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
         category_id: categoryId || null,
         usual_quantity: Number(quantity),
         notes: notes.trim() || null
-      });
+      }, image);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Couldn’t save this product.");
     } finally {
@@ -52,6 +73,11 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
   return (
     <AppScreen keyboardSafe>
       <BackHeader title={title} onBack={() => router.back()} />
+      <View style={styles.photoArea}>
+        {previewUri && failedPreviewUri !== previewUri ? <Image accessibilityLabel="Selected product photo" onError={() => setFailedPreviewUri(previewUri)} source={{ uri: previewUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder}><Text style={styles.photoPlaceholderText}>{failedPreviewUri === previewUri ? "Photo unavailable" : "No photo selected"}</Text></View>}
+        <SecondaryButton label={previewUri ? "Change photo" : "Add photo"} icon="image" onPress={() => void pickImage()} />
+        {image ? <Pressable accessibilityRole="button" onPress={() => setImage(undefined)}><Text style={styles.removePhoto}>Remove selected photo</Text></Pressable> : null}
+      </View>
       <Text style={styles.section}>Product details</Text>
       <Field label="Name *" value={name} onChangeText={setName} placeholder="e.g. Whole milk" />
       <Field label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Brookside" />
@@ -99,6 +125,11 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
 
 const styles = StyleSheet.create({
   section: { ...typography.sectionTitle, color: colors.text, marginBottom: spacing.md },
+  photoArea: { gap: spacing.sm, marginBottom: spacing.lg },
+  photo: { width: "100%", height: 180, borderRadius: radius.lg },
+  photoPlaceholder: { height: 112, borderRadius: radius.lg, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
+  photoPlaceholderText: { ...typography.secondary, color: colors.textSecondary },
+  removePhoto: { ...typography.secondary, color: colors.danger, textAlign: "center", paddingVertical: spacing.sm },
   field: { marginBottom: spacing.md },
   label: { ...typography.secondary, color: colors.text, fontWeight: "700", marginBottom: spacing.xs },
   input: { minHeight: 48, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, ...typography.body, color: colors.text },

@@ -3,6 +3,7 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.auth.dependencies import CurrentUser
 from app.core.config import Settings, get_settings
@@ -11,7 +12,14 @@ from app.households.dependencies import HouseholdAccessDependency
 
 from .dependencies import ProductServiceDependency
 from .models import HouseholdProduct
-from .schemas import CategoryResponse, ProductPatch, ProductResponse, ProductWrite, SubstituteList
+from .schemas import (
+    CategoryResponse,
+    ProductPatch,
+    ProductResponse,
+    ProductWrite,
+    SubstituteList,
+)
+from .service import LocalObjectStorage
 
 router = APIRouter(tags=["products"])
 
@@ -41,6 +49,18 @@ def response(product: HouseholdProduct, service) -> ProductResponse:
 @router.get("/product-categories", response_model=list[CategoryResponse])
 async def categories(service: ProductServiceDependency):
     return await service.repo.categories()
+
+
+@router.get("/product-images/{key:path}", response_class=FileResponse)
+async def product_image(key: str, settings: Annotated[Settings, Depends(get_settings)]):
+    path = LocalObjectStorage(settings).path_for(key)
+    if not path:
+        raise ApiError(
+            status_code=404,
+            code="PRODUCT_IMAGE_NOT_FOUND",
+            message="Product image not found.",
+        )
+    return FileResponse(path)
 
 
 @router.get("/households/{household_id}/products", response_model=list[ProductResponse])
@@ -131,7 +151,12 @@ async def image(
     product = await service.repo.get(access.household.id, product_id)
     if not product:
         raise ApiError(status_code=404, code="PRODUCT_NOT_FOUND", message="Product not found.")
-    key = f"households/{access.household.id}/products/{product.id}/{uuid4().hex}"
+    extension = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }.get(file.content_type or "", "")
+    key = f"households/{access.household.id}/products/{product.id}/{uuid4().hex}{extension}"
     await service.storage.save(key, file)
     old = product.primary_image_key
     product.primary_image_key = key

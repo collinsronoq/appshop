@@ -1,17 +1,25 @@
 {
   "expo": {
-    "name": "Household Shopping",
+    "name": "AppShop",
     "slug": "household-shopping",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "householdshopping",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-notifications",
-      "expo-asset"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow AppShop to choose a product photo from your library.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-asset",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

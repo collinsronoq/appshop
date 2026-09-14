@@ -44,6 +44,12 @@ class LocalObjectStorage:
             if self.root in target.parents and target.exists():
                 target.unlink()
 
+    def path_for(self, key: str) -> Path | None:
+        target = (self.root / key).resolve()
+        if self.root not in target.parents or not target.is_file():
+            return None
+        return target
+
     def url_for(self, key: str | None) -> str | None:
         return f"/api/v1/product-images/{key}" if key else None
 

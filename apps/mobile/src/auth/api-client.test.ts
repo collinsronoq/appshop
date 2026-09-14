@@ -167,4 +167,25 @@ describe("AuthApiClient", () => {
       "household-shopping.refresh-token"
     );
   });
+
+  it("lets fetch set the multipart boundary for authenticated form data", async () => {
+    fetchMock.mockResolvedValueOnce(response(200, {
+      user: USER,
+      access_token: "access-token",
+      refresh_token: "refresh-token",
+      token_type: "bearer",
+      expires_in: 900
+    }));
+    const client = new AuthApiClient("http://api.test/api/v1");
+    await client.login({ email: USER.email, password: "valid-password" });
+    fetchMock.mockResolvedValueOnce(response(200, { ok: true }));
+    const body = new FormData();
+    body.append("file", "image-data");
+
+    await client.authenticatedRequest("/upload", { method: "POST", body });
+
+    const headers = fetchMock.mock.calls[1]?.[1]?.headers as Headers;
+    expect(headers.get("Content-Type")).toBeNull();
+    expect(headers.get("Authorization")).toBe("Bearer access-token");
+  });
 });

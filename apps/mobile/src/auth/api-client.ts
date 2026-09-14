@@ -117,7 +117,7 @@ export class AuthApiClient implements AuthClient {
   ): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
-      headers: this.headers(init.headers, this.accessToken)
+      headers: this.headers(init.headers, this.accessToken, init.body)
     });
     if (response.status === 401 && mayRetry && this.refreshToken) {
       await this.refreshAccessToken();
@@ -129,7 +129,7 @@ export class AuthApiClient implements AuthClient {
   private async publicRequest<T>(path: string, init: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
-      headers: this.headers(init.headers, null)
+      headers: this.headers(init.headers, null, init.body)
     });
     return this.parseResponse<T>(response);
   }
@@ -171,10 +171,11 @@ export class AuthApiClient implements AuthClient {
     await this.storage.remove();
   }
 
-  private headers(existing: HeadersInit | undefined, accessToken: string | null): Headers {
+  private headers(existing: HeadersInit | undefined, accessToken: string | null, body?: BodyInit | null): Headers {
     const headers = new Headers(existing);
     headers.set("Accept", "application/json");
-    headers.set("Content-Type", "application/json");
+    const multipart = typeof FormData !== "undefined" && body instanceof FormData;
+    if (!multipart) headers.set("Content-Type", "application/json");
     if (accessToken) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
