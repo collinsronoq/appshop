@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../auth/auth-context";
 import {
-  AppHeader,
   AppScreen,
+  AppTopBar,
   EmptyState,
   HouseholdSwitcher,
   InlineError,
@@ -29,10 +29,9 @@ import { CreateHouseholdScreen } from "../screens/create-household-screen";
 
 type ActiveTrip = { list: ShoppingList; trip: ShoppingTrip };
 
-function greeting(name?: string) {
-  const hour = new Date().getHours();
-  const salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  return `${salutation}${name ? `, ${name}` : ""}`;
+function initials(name?: string, email?: string) {
+  const value = name || email || "U";
+  return value.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
 function relativePurchase(value: string) {
@@ -155,30 +154,32 @@ function HomeContent({ householdId }: { householdId: string }) {
 
   return (
     <AppScreen testID={`home-${householdId}`}>
-      <AppHeader
-        title={greeting(user?.display_name)}
-        right={<Pressable accessibilityLabel="Open profile" accessibilityRole="button" onPress={() => router.push("/profile")} style={styles.avatar}><Text style={styles.avatarText}>{user?.display_name?.slice(0, 1).toUpperCase() ?? "U"}</Text></Pressable>}
+      <AppTopBar
+        initials={initials(user?.display_name, user?.email)}
+        notificationCount={actionable.length}
+        onNotifications={() => router.push("/substitutions")}
+        onProfile={() => router.push("/profile")}
       />
       <HouseholdSwitcher name={selected?.name ?? "Household"} onPress={() => router.push("/households")} />
 
       <SectionHeader title="Active shopping" />
       <ActiveShopping active={active} loading={activeLoading} onCreateList={() => router.push("/lists")} />
 
-      <SectionHeader actionLabel="See all" onAction={() => router.push("/lists")} title="Shopping Lists" />
-      <ListPreview error={lists.isError} lists={lists.data} loading={lists.isLoading} retry={() => void lists.refetch()} />
-
       {!substitutions.isLoading && !substitutions.isError ? <Attention items={actionable} /> : null}
       {substitutions.isError ? <><SectionHeader title="Needs your attention" /><InlineError onRetry={() => void substitutions.refetch()} /></> : null}
-
-      <MemoryPreview error={recent.isError} items={recent.data?.items} loading={recent.isLoading} retry={() => void recent.refetch()} title="Recently purchased" />
-      <MemoryPreview error={frequent.isError} frequent items={frequent.data?.items} loading={frequent.isLoading} retry={() => void frequent.refetch()} title="Frequently bought" />
 
       <SectionHeader title="Quick actions" />
       <View style={styles.quickActions}>
         <QuickAction icon="plus-square" label="New list" onPress={() => router.push("/lists")} />
         <QuickAction icon="package" label="Add product" onPress={() => router.push("/products/new")} />
-        <QuickAction icon="user-plus" label="Invite member" onPress={() => router.push("/invite")} />
+        {selected?.role === "owner" ? <QuickAction icon="user-plus" label="Invite member" onPress={() => router.push("/invite")} /> : null}
       </View>
+
+      <SectionHeader actionLabel="See all" onAction={() => router.push("/lists")} title="Shopping Lists" />
+      <ListPreview error={lists.isError} lists={lists.data} loading={lists.isLoading} retry={() => void lists.refetch()} />
+
+      <MemoryPreview error={recent.isError} items={recent.data?.items} loading={recent.isLoading} retry={() => void recent.refetch()} title="Recently purchased" />
+      <MemoryPreview error={frequent.isError} frequent items={frequent.data?.items} loading={frequent.isLoading} retry={() => void frequent.refetch()} title="Frequently bought" />
     </AppScreen>
   );
 }
@@ -195,8 +196,6 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.78 },
-  avatar: { width: 44, height: 44, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
-  avatarText: { ...typography.cardTitle, color: colors.surface },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.md },
   cardTitle: { ...typography.cardTitle, color: colors.text },
   secondary: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },

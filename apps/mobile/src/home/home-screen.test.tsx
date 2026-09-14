@@ -6,9 +6,10 @@ import { listApi } from "../lists/api-client";
 import { memoryApi } from "../memory/api-client";
 import { pushNotificationApi } from "../notifications/api-client";
 import { tripApi } from "../trips/api-client";
+import type { HouseholdSummary } from "../households/types";
 
 const mockPush = jest.fn();
-let mockHousehold = { id: "h1", name: "Kamau Home", role: "owner" as const, member_count: 2, created_at: "2026-09-01T00:00:00Z" };
+let mockHousehold: HouseholdSummary = { id: "h1", name: "Kamau Home", role: "owner", member_count: 2, created_at: "2026-09-01T00:00:00Z" };
 
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn() }) }));
 jest.mock("../auth/auth-context", () => ({ useAuth: () => ({ user: { id: "me", display_name: "Jane", email: "jane@example.com" } }) }));
@@ -44,10 +45,33 @@ beforeEach(() => {
 describe("Home", () => {
   it("renders an intentional new-household state", async () => {
     renderHome();
+    expect(screen.getByText("AppShop")).toBeTruthy();
+    expect(screen.queryByText(/Good (morning|afternoon|evening)/)).toBeNull();
     expect(await screen.findByText("No shopping lists yet")).toBeTruthy();
     expect(screen.getByText("Ready for the next shop?")).toBeTruthy();
     expect(screen.getByText(/No purchases yet/)).toBeTruthy();
     expect(screen.getByText("Add product")).toBeTruthy();
+  });
+
+  it("routes top-bar actions and keeps quick actions before memory", async () => {
+    const view = renderHome();
+    expect(await screen.findByText("No shopping lists yet")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Open profile"));
+    fireEvent.press(screen.getByLabelText("Open notifications"));
+    expect(mockPush).toHaveBeenCalledWith("/profile");
+    expect(mockPush).toHaveBeenCalledWith("/substitutions");
+
+    const rendered = JSON.stringify(view.toJSON());
+    expect(rendered.indexOf("Quick actions")).toBeLessThan(rendered.indexOf("Shopping Lists"));
+    expect(rendered.indexOf("Shopping Lists")).toBeLessThan(rendered.indexOf("Recently purchased"));
+    expect(rendered.indexOf("Recently purchased")).toBeLessThan(rendered.indexOf("Frequently bought"));
+  });
+
+  it("hides the owner-only Invite member action for household members", async () => {
+    mockHousehold = { ...mockHousehold, role: "member" };
+    renderHome();
+    expect(await screen.findByText("No shopping lists yet")).toBeTruthy();
+    expect(screen.queryByText("Invite member")).toBeNull();
   });
 
   it("renders active shopping, list, attention, and memory data", async () => {

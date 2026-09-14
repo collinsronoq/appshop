@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../../src/auth/auth-context";
-import { AppHeader, AppScreen, SurfaceCard } from "../../../src/design/components";
+import { AppHeader, AppScreen, AppTopBar, SurfaceCard } from "../../../src/design/components";
 import type { IconName } from "../../../src/design/components";
 import { colors, iconSizes, radius, spacing, touchTargets, typography } from "../../../src/design/theme";
 import { useHouseholds } from "../../../src/households/household-context";
@@ -28,6 +28,7 @@ export default function ProfileScreen() {
   const initials = (user?.display_name || user?.email || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <AppScreen>
+      <AppTopBar initials={initials} onNotifications={() => router.push("/substitutions")} onProfile={() => undefined} showProfile={false} />
       <AppHeader title="Profile" />
       <SurfaceCard style={styles.identityCard}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></View>

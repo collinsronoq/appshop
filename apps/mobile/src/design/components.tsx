@@ -66,6 +66,38 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
   );
 }
 
+export function AppTopBar({
+  initials,
+  notificationCount = 0,
+  onNotifications,
+  onProfile,
+  showProfile = true
+}: {
+  initials: string;
+  notificationCount?: number;
+  onNotifications: () => void;
+  onProfile: () => void;
+  showProfile?: boolean;
+}) {
+  const avatarInitials = initials.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <View accessibilityRole="header" style={styles.topBar}>
+      <Text style={styles.appIdentity}>AppShop</Text>
+      <View style={styles.topBarActions}>
+        <Pressable accessibilityLabel="Open notifications" accessibilityRole="button" onPress={onNotifications} style={styles.topBarAction}>
+          <Feather color={colors.primary} name="bell" size={iconSizes.md} />
+          {notificationCount > 0 ? <View accessibilityLabel={`${notificationCount} pending notification${notificationCount === 1 ? "" : "s"}`} style={styles.notificationBadge} /> : null}
+        </Pressable>
+        {showProfile ? (
+          <Pressable accessibilityLabel="Open profile" accessibilityRole="button" onPress={onProfile} style={styles.topBarAction}>
+            <View style={styles.topBarAvatar}><Text style={styles.topBarAvatarText}>{avatarInitials}</Text></View>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export function BackHeader({ title, subtitle, onBack, right }: { title: string; subtitle?: string; onBack: () => void; right?: ReactNode }) {
   return (
     <View style={styles.backHeader}>
@@ -200,6 +232,13 @@ const styles = StyleSheet.create({
   backButton: { width: touchTargets.minimum, height: touchTargets.minimum, alignItems: "center", justifyContent: "center" },
   backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
   headerCopy: { flex: 1, minWidth: 0 },
+  topBar: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs },
+  appIdentity: { ...typography.cardTitle, color: colors.text, fontSize: 19, lineHeight: 24, fontWeight: "800" },
+  topBarActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  topBarAction: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center" },
+  topBarAvatar: { width: 38, height: 38, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  topBarAvatarText: { ...typography.caption, color: colors.surface, fontWeight: "800" },
+  notificationBadge: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: radius.round, backgroundColor: colors.warning },
   screenTitle: { ...typography.screenTitle, color: colors.text },
   headerSubtitle: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
   sectionHeader: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },

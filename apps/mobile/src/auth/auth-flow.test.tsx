@@ -107,7 +107,7 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(await screen.findByLabelText("Email"), "jane@example.com");
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
     fireEvent.press(screen.getByText("Sign in"));
-    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("AppShop")).toBeTruthy();
     expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
@@ -117,7 +117,7 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(screen.getByLabelText("Email"), "jane@example.com");
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
     fireEvent.press(screen.getByText("Create account"));
-    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("AppShop")).toBeTruthy();
     expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
@@ -139,7 +139,7 @@ describe("mobile authentication flow", () => {
     const client = new FakeAuthClient();
     client.restoredUser = USER;
     renderFlow(client);
-    expect(await screen.findByText(/Good (morning|afternoon|evening), Jane/)).toBeTruthy();
+    expect(await screen.findByText("AppShop")).toBeTruthy();
     expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
   });
 
