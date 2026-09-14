@@ -14,7 +14,7 @@ export async function registerDeviceForPush(
   platform: "ios" | "android"
 ): Promise<string | null> {
   let permission = await notifications.getPermissionsAsync();
-  if (permission.status === "undetermined") {
+  if (permission.status !== "granted" && permission.canAskAgain !== false) {
     permission = await notifications.requestPermissionsAsync();
   }
   if (permission.status !== "granted") {

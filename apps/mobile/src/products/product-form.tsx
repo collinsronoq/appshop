@@ -74,7 +74,7 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
     <AppScreen keyboardSafe>
       <BackHeader title={title} onBack={() => router.back()} />
       <View style={styles.photoArea}>
-        {previewUri && failedPreviewUri !== previewUri ? <Image accessibilityLabel="Selected product photo" onError={() => setFailedPreviewUri(previewUri)} source={{ uri: previewUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder}><Text style={styles.photoPlaceholderText}>{failedPreviewUri === previewUri ? "Photo unavailable" : "No photo selected"}</Text></View>}
+        {previewUri && failedPreviewUri !== previewUri ? <Image accessibilityLabel="Selected product photo" onError={() => setFailedPreviewUri(previewUri)} source={{ uri: previewUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder}><Text style={styles.photoPlaceholderText}>{previewUri && failedPreviewUri === previewUri ? "Photo unavailable" : "No photo selected"}</Text></View>}
         <SecondaryButton label={previewUri ? "Change photo" : "Add photo"} icon="image" onPress={() => void pickImage()} />
         {image ? <Pressable accessibilityRole="button" onPress={() => setImage(undefined)}><Text style={styles.removePhoto}>Remove selected photo</Text></Pressable> : null}
       </View>

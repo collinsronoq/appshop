@@ -10,6 +10,13 @@ import { pushStorage } from "../src/notifications/storage";
 
 type NotificationModule = typeof import("expo-notifications");
 
+function notificationsModule(): NotificationModule {
+  // This screen is guarded from Expo Go before the native module is evaluated.
+  // A synchronous Metro require avoids a split-bundle request on Android.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("expo-notifications") as NotificationModule;
+}
+
 export default function NotificationsSettings() {
   const router = useRouter();
   const expoGo = Constants.appOwnership === "expo";
@@ -18,7 +25,7 @@ export default function NotificationsSettings() {
   const [error, setError] = useState("");
   useEffect(() => {
     if (expoGo || Platform.OS === "web") return;
-    void import("expo-notifications")
+    void Promise.resolve(notificationsModule())
       .then((notifications) => notifications.getPermissionsAsync())
       .then((permission) => setStatus(permission.status))
       .catch(() => setStatus("unavailable"));
@@ -32,7 +39,7 @@ export default function NotificationsSettings() {
     setSaving(true);
     setError("");
     try {
-      const notifications: NotificationModule = await import("expo-notifications");
+      const notifications = notificationsModule();
       const id = await registerDeviceForPush(pushNotificationApi, notifications, Platform.OS === "ios" ? "ios" : "android");
       setStatus(id ? "granted" : "denied");
       if (!id) setError("Notifications are disabled in system settings.");

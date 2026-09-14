@@ -19,7 +19,8 @@
         }
       ],
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true
@@ -29,6 +30,13 @@
     },
     "ios": {
       "bundleIdentifier": "com.example.householdshopping"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6814b859-765a-4096-82df-630e70473699"
+      }
+    },
+    "owner": "collinsrono"
   }
 }

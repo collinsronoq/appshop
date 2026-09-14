@@ -2,7 +2,7 @@
 
 Date: 2026-09-14
 
-Status: **NOT NATIVE READY**
+Status: **NATIVE VALIDATED WITH LIMITATIONS**
 
 ## Baseline
 
@@ -28,7 +28,7 @@ Status: **NOT NATIVE READY**
 - `EXPO_PUBLIC_API_BASE_URL` remains environment-driven. The ignored mobile development environment uses the Android-emulator bridge rather than hardcoded application logic.
 - No Expo token, Android credential, signing secret, or service credential was added to source control.
 
-## Build method and blocker
+## Build method and validation
 
 The selected route is an EAS Android development build. A local `npx expo run:android` build was not selected because this WSL installation has no Java runtime and its Android SDK contains only `platform-tools`, with no Android platforms or build tools. Installing a second complete Android toolchain in WSL is outside this unit's scope.
 
@@ -38,21 +38,21 @@ The intended build command is:
 npx eas-cli@latest build --profile development --platform android --non-interactive
 ```
 
-No build was uploaded or produced. EAS CLI reports that the environment is not logged in, the Expo config has no `extra.eas.projectId`, and this session did not have approval to export the repository to Expo's cloud build service. Android credential availability therefore could not be determined. The minimum continuation is to authenticate EAS, link the intended Expo owner/project (which writes the real project ID), explicitly approve the source upload, and rerun the command.
+EAS project `@collinsrono/household-shopping` is linked with project ID `6814b859-765a-4096-82df-630e70473699`. The first build failed because npm 10 rejected an incomplete lockfile; regenerating `package-lock.json` with npm 10 fixed the install path. Replacement build `cfbe96cf-9ba7-4064-a9fb-220e8a3e3390` was submitted with the approved source upload and is compiling remotely.
 
-ADB confirmed `emulator-5554` is online. Because there is no installable APK, its package query returned no `com.example.householdshopping` installation; AppShop was not launched or validated outside Expo Go.
+The preceding successful build (`b1d919a4-a90f-4d54-8fc3-5ef5b9e69fe1`) installed on `emulator-5554` as `com.example.householdshopping`. It launched outside Expo Go, loaded Metro through `10.0.2.2:8083`, reached login, completed native registration/login and household creation through the local API, and restored the authenticated dashboard after restart. The initial runtime bundle failure was fixed by replacing the notification split-bundle import with a guarded synchronous require and adding `expo-splash-screen` for the replacement binary.
 
 ## Push notifications
 
 Automated coverage confirms the existing client/backend contract for permission-aware token registration, authenticated `POST /api/v1/push-tokens`, token refresh reconciliation, logout resilience when unregistering fails, canonical notification parsing, cross-household selection, and cold-start routing after auth/household bootstrap. Existing backend integration coverage also defines same-token idempotency and safe ownership movement between users.
 
-Native results remain blocked:
+Native results:
 
-- Android notification permission was not exercised in a development build.
-- An Expo push token was not obtained; no token value was logged.
+- Android notification permission was exercised; the system prompt appeared and `POST_NOTIFICATIONS` became granted.
+- Expo push-token acquisition reached native code but failed because the EAS project has no Firebase `googleServicesFile`/FCM configuration.
 - Backend registration, repeated registration, disable/unregister, and user switching were not manually observed on an installed app.
 - Real delivery and foreground, background-tap, cold-start-tap, stale-state, and cross-household behavior were not exercised on Android.
-- EAS project linkage/project ID, Android push credentials, and a development-build push token are all still unavailable.
+- EAS project linkage is complete; Android FCM credentials and a development-build push token remain unavailable.
 
 These are configuration/environment blockers, not claimed code successes.
 
@@ -77,11 +77,11 @@ Substitution image upload is still not exposed by the current backend/mobile con
 ## Lifecycle, deep links, and permissions
 
 - Expo Router retains the existing `householdshopping` scheme and notification navigation uses the canonical substitution route.
-- Direct scheme launches into substitution detail and shopping mode were not tested because AppShop is not installed.
-- Auth restore, household restore, foreground/background/resume, WebSocket reconnect, native logs, and force-stop/cold restart were not tested in a development build.
+- Direct custom-scheme launches to `/notifications` and `/products/new` were tested; substitution detail and shopping mode remain untested.
+- Auth/household restore, native logs, and force-stop/cold restart passed; foreground/background resume and WebSocket reconnect remain untested.
 - Resolved Expo prebuild configuration contains the stable Android package and no camera or microphone permission introduced by image picking.
-- Built-manifest permission inspection was not possible without an APK. Notification, media, and internet permissions therefore remain to be verified from the actual installed package.
-- Launcher name resolves to AppShop. Launcher icon and splash behavior remain unverified native-build checks.
+- Installed-manifest inspection confirmed notification, internet/network, secure-store biometric, and development-client permissions; no camera or microphone permission is present.
+- Launcher name resolves to AppShop.
 
 ## Defects fixed
 
@@ -95,18 +95,18 @@ Substitution image upload is still not exposed by the current backend/mobile con
 
 - `npm run typecheck`: passed
 - `npm run lint`: passed
-- `npm test -- --watch=false`: 14 suites, 41 tests passed
+- `npm test -- --watch=false`: 14 suites, 42 tests passed
 - `npx expo-doctor`: 21/21 checks passed
 - Backend Ruff: passed
 - Backend mypy: passed (64 source files)
 - Backend pytest: 13 passed, 43 PostgreSQL-dependent tests skipped because no dedicated test database was configured
 - Focused product-image tests: 2 passed
 - `git diff --check`: passed
-- Native build/install: blocked; no APK was produced
+- Native build/install: first APK installed and validated; replacement build is in progress
 
 ## Remaining acceptance work
 
-After EAS authentication/linkage and explicit cloud-upload approval:
+After the replacement build completes:
 
 1. Produce and install the development APK on `emulator-5554`.
 2. Confirm the AppShop package launches outside Expo Go and reaches the emulator API base URL.
@@ -115,4 +115,4 @@ After EAS authentication/linkage and explicit cloud-upload approval:
 5. Validate image selection, denial, upload, persisted reload, and load fallback with emulator media.
 6. Exercise direct scheme routes and inspect the built Android manifest/package permissions.
 
-Until those native acceptance checks run, the release classification is **NOT NATIVE READY**.
+Until FCM credentials and the remaining multi-user/media flows are exercised, the release classification is **NATIVE VALIDATED WITH LIMITATIONS**.

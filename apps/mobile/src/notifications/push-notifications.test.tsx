@@ -111,7 +111,7 @@ describe("push notification lifecycle", () => {
   });
 
   it("continues without registration when permission is denied", async () => {
-    mockedNotifications.getPermissionsAsync.mockResolvedValue({ status: "denied" } as never);
+    mockedNotifications.getPermissionsAsync.mockResolvedValue({ status: "denied", canAskAgain: false } as never);
     const client = new FakeClient();
     await expect(registerDeviceForPush(
       new PushNotificationApiClient(client),
@@ -120,6 +120,18 @@ describe("push notification lifecycle", () => {
     )).resolves.toBeNull();
     expect(client.requests).toHaveLength(0);
     expect(mockedNotifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
+  });
+
+  it("requests permission when Android initially reports denied but can ask again", async () => {
+    mockedNotifications.getPermissionsAsync.mockResolvedValue({ status: "denied", canAskAgain: true } as never);
+    const client = new FakeClient();
+    await registerDeviceForPush(
+      new PushNotificationApiClient(client),
+      mockedNotifications as NotificationRegistrationAdapter,
+      "android"
+    );
+    expect(mockedNotifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(client.requests[0]?.path).toBe("/push-tokens");
   });
 
   it("reconciles registration when the native push token changes", async () => {
