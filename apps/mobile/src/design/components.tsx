@@ -1,4 +1,4 @@
-import type { ComponentProps, PropsWithChildren, ReactElement, ReactNode } from "react";
+import { createContext, useContext, type ComponentProps, type PropsWithChildren, type ReactElement, type ReactNode } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import {
   ActivityIndicator,
@@ -27,7 +27,14 @@ type AppScreenProps = PropsWithChildren<{
   refreshControl?: ReactElement<RefreshControlProps>;
 }>;
 
+const AppShellContext = createContext(false);
+
+export function AppShellProvider({ children }: PropsWithChildren) {
+  return <AppShellContext.Provider value>{children}</AppShellContext.Provider>;
+}
+
 export function AppScreen({ children, scroll = true, keyboardSafe = false, contentStyle, refreshControl, testID }: AppScreenProps) {
+  const shellOwnsSafeArea = useContext(AppShellContext);
   const body = scroll ? (
     <ScrollView
       automaticallyAdjustKeyboardInsets
@@ -44,7 +51,7 @@ export function AppScreen({ children, scroll = true, keyboardSafe = false, conte
   );
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
+    <SafeAreaView edges={shellOwnsSafeArea ? [] : ["top", "left", "right"]} style={styles.screen}>
       {keyboardSafe ? (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.fill}>
           {body}
@@ -67,22 +74,29 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
 }
 
 export function AppTopBar({
+  variant = "root",
+  title,
   initials,
   notificationCount = 0,
   onNotifications,
   onProfile,
+  onBack,
   showProfile = true
 }: {
+  variant?: "root" | "nested";
+  title?: string;
   initials: string;
   notificationCount?: number;
   onNotifications: () => void;
   onProfile: () => void;
+  onBack?: () => void;
   showProfile?: boolean;
 }) {
   const avatarInitials = initials.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <View accessibilityRole="header" style={styles.topBar}>
-      <Text style={styles.appIdentity}>AppShop</Text>
+      {variant === "nested" ? <Pressable accessibilityLabel="Go back" accessibilityRole="button" disabled={!onBack} onPress={onBack} style={styles.topBarAction}><Feather color={colors.text} name="arrow-left" size={iconSizes.md} /></Pressable> : null}
+      {variant === "root" ? <Text style={styles.appIdentity}>AppShop</Text> : <Text ellipsizeMode="tail" numberOfLines={1} style={styles.nestedTitle}>{title ?? "AppShop"}</Text>}
       <View style={styles.topBarActions}>
         <Pressable accessibilityLabel="Open notifications" accessibilityRole="button" onPress={onNotifications} style={styles.topBarAction}>
           <Feather color={colors.primary} name="bell" size={iconSizes.md} />
@@ -99,6 +113,10 @@ export function AppTopBar({
 }
 
 export function BackHeader({ title, subtitle, onBack, right }: { title: string; subtitle?: string; onBack: () => void; right?: ReactNode }) {
+  const shellOwnsHeader = useContext(AppShellContext);
+  if (shellOwnsHeader) {
+    return right ? <View style={styles.nestedAction}>{right}</View> : null;
+  }
   return (
     <View style={styles.backHeader}>
       <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} style={styles.backButton}><Feather color={colors.text} name="arrow-left" size={iconSizes.md} /></Pressable>
@@ -232,8 +250,10 @@ const styles = StyleSheet.create({
   backButton: { width: touchTargets.minimum, height: touchTargets.minimum, alignItems: "center", justifyContent: "center" },
   backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
   headerCopy: { flex: 1, minWidth: 0 },
-  topBar: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs },
+  topBar: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs, paddingHorizontal: spacing.xl, backgroundColor: colors.appBarBackground, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.appBarBorder },
   appIdentity: { ...typography.cardTitle, color: colors.text, fontSize: 19, lineHeight: 24, fontWeight: "800" },
+  nestedTitle: { ...typography.cardTitle, color: colors.text, flex: 1, minWidth: 0 },
+  nestedAction: { alignSelf: "flex-end", marginBottom: spacing.sm },
   topBarActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   topBarAction: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center" },
   topBarAvatar: { width: 38, height: 38, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },

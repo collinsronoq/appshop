@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 export const colors = {
   background: "#F7F4ED",
   surface: "#FFFFFF",
+  appBarBackground: "#FFFFFF",
+  appBarBorder: "#E3E1DA",
   primary: "#245A43",
   primaryPressed: "#194431",
   primarySubtle: "#DFEADF",

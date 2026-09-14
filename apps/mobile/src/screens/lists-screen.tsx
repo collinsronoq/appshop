@@ -3,8 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { RefreshControl, StyleSheet, Text, View } from "react-native";
 
-import { AppHeader, AppScreen, AppTopBar, EmptyState, IconButton, InlineError, LoadingState, SectionHeader } from "../design/components";
-import { useAuth } from "../auth/auth-context";
+import { AppHeader, AppScreen, EmptyState, IconButton, InlineError, LoadingState, SectionHeader } from "../design/components";
 import { colors, spacing, typography } from "../design/theme";
 import { useHouseholds } from "../households/household-context";
 import { listApi } from "../lists/api-client";
@@ -14,7 +13,6 @@ import type { ShoppingTrip } from "../trips/types";
 
 export function ListsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { selected } = useHouseholds();
   const [showArchived, setShowArchived] = useState(false);
   const lists = useQuery({ queryKey: ["households", selected?.id, "shopping-lists"], queryFn: () => listApi.lists(selected!.id), enabled: Boolean(selected) });
@@ -25,7 +23,6 @@ export function ListsScreen() {
   const refresh = () => void Promise.all([lists.refetch(), showArchived ? archived.refetch() : Promise.resolve()]);
   return (
     <AppScreen contentStyle={styles.content} refreshControl={<RefreshControl refreshing={lists.isRefetching} onRefresh={refresh} />}>
-      <AppTopBar initials={user?.display_name || user?.email || "U"} onNotifications={() => router.push("/substitutions")} onProfile={() => router.push("/profile")} />
       <AppHeader title="Shopping Lists" subtitle="Plan what your household needs." right={<IconButton icon="plus" label="Create a new shopping list" onPress={() => router.push("/lists/new")} />} />
       {lists.isLoading ? <LoadingState rows={3} /> : lists.isError ? <InlineError onRetry={() => void lists.refetch()} /> : activeLists.length === 0 ? (
         <EmptyState icon="list" title="No shopping lists yet" body="Create your first list and start adding what the household needs." action={<Text accessibilityRole="button" onPress={() => router.push("/lists/new")} style={styles.emptyAction}>Create shopping list</Text>} />

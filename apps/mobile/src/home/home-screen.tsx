@@ -6,7 +6,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../auth/auth-context";
 import {
   AppScreen,
-  AppTopBar,
   EmptyState,
   HouseholdSwitcher,
   InlineError,
@@ -28,11 +27,6 @@ import type { ShoppingTrip } from "../trips/types";
 import { CreateHouseholdScreen } from "../screens/create-household-screen";
 
 type ActiveTrip = { list: ShoppingList; trip: ShoppingTrip };
-
-function initials(name?: string, email?: string) {
-  const value = name || email || "U";
-  return value.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-}
 
 function relativePurchase(value: string) {
   const elapsedDays = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000));
@@ -154,12 +148,6 @@ function HomeContent({ householdId }: { householdId: string }) {
 
   return (
     <AppScreen testID={`home-${householdId}`}>
-      <AppTopBar
-        initials={initials(user?.display_name, user?.email)}
-        notificationCount={actionable.length}
-        onNotifications={() => router.push("/substitutions")}
-        onProfile={() => router.push("/profile")}
-      />
       <HouseholdSwitcher name={selected?.name ?? "Household"} onPress={() => router.push("/households")} />
 
       <SectionHeader title="Active shopping" />

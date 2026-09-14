@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Text } from "react-native";
+import { useRouter } from "expo-router";
 
 import { AuthApiError, type AuthClient } from "./api-client";
 import { AuthProvider, useAuth } from "./auth-context";
@@ -11,6 +12,7 @@ import type { LoginInput, RegisterInput, User } from "./types";
 import { HomeScreen as AuthenticatedHomeScreen } from "../home/home-screen";
 import { LoginScreen } from "../screens/login-screen";
 import { RegisterScreen } from "../screens/register-screen";
+import { AppShellProvider, AppTopBar } from "../design/components";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
@@ -74,11 +76,12 @@ function LogoutControl() {
 }
 
 function SessionSwitch({ authScreen, authenticatedScreen }: { authScreen: ReactNode; authenticatedScreen: ReactNode }) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
+  const router = useRouter();
   if (status === "loading") {
     return null;
   }
-  return status === "authenticated" ? authenticatedScreen : authScreen;
+  return status === "authenticated" ? <AppShellProvider><AppTopBar initials={user?.display_name || user?.email || "U"} onNotifications={() => router.push("/substitutions")} onProfile={() => router.push("/profile")} />{authenticatedScreen}</AppShellProvider> : authScreen;
 }
 
 function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />, authenticatedScreen: ReactNode = <AuthenticatedHomeScreen />) {

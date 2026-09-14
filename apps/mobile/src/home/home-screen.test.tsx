@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { HomeScreen } from "./home-screen";
+import { AppShellProvider, AppTopBar } from "../design/components";
 import { listApi } from "../lists/api-client";
 import { memoryApi } from "../memory/api-client";
 import { pushNotificationApi } from "../notifications/api-client";
@@ -29,7 +30,7 @@ const mockedActive = jest.mocked(tripApi.active);
 
 function renderHome() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return render(<QueryClientProvider client={queryClient}><HomeScreen /></QueryClientProvider>);
+  return render(<QueryClientProvider client={queryClient}><AppShellProvider><AppTopBar initials="Jane" onNotifications={() => mockPush("/substitutions")} onProfile={() => mockPush("/profile")} /><HomeScreen /></AppShellProvider></QueryClientProvider>);
 }
 
 beforeEach(() => {
@@ -106,7 +107,7 @@ describe("Home", () => {
     const view = renderHome();
     expect(await screen.findByText("Old household list")).toBeTruthy();
     mockHousehold = { ...mockHousehold, id: "h2", name: "Second Home" };
-    view.rerender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })}><HomeScreen /></QueryClientProvider>);
+    view.rerender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })}><AppShellProvider><AppTopBar initials="Jane" onNotifications={() => mockPush("/substitutions")} onProfile={() => mockPush("/profile")} /><HomeScreen /></AppShellProvider></QueryClientProvider>);
     expect(await screen.findByText("New household list")).toBeTruthy();
     await waitFor(() => expect(screen.queryByText("Old household list")).toBeNull());
     expect(screen.getByLabelText("Switch household. Current household Second Home")).toBeTruthy();

@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../../src/auth/auth-context";
-import { AppHeader, AppScreen, AppTopBar, SurfaceCard } from "../../../src/design/components";
+import { AppHeader, AppScreen, SurfaceCard } from "../../../src/design/components";
 import type { IconName } from "../../../src/design/components";
 import { colors, iconSizes, radius, spacing, touchTargets, typography } from "../../../src/design/theme";
 import { useHouseholds } from "../../../src/households/household-context";
@@ -25,13 +25,10 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { selected } = useHouseholds();
-  const initials = (user?.display_name || user?.email || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <AppScreen>
-      <AppTopBar initials={initials} onNotifications={() => router.push("/substitutions")} onProfile={() => undefined} showProfile={false} />
       <AppHeader title="Profile" />
       <SurfaceCard style={styles.identityCard}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></View>
         <View style={styles.flex}><Text style={styles.name}>{user?.display_name || user?.email}</Text><Text style={styles.email}>{user?.display_name ? user.email : "Account"}</Text></View>
       </SurfaceCard>
 
@@ -63,9 +60,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
-  identityCard: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  avatar: { width: 48, height: 48, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
-  avatarText: { ...typography.sectionTitle, color: colors.surface },
+  identityCard: { minHeight: 72, justifyContent: "center" },
   name: { ...typography.cardTitle, color: colors.text, fontSize: 18 },
   email: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
   sectionTitle: { ...typography.sectionTitle, color: colors.text, marginTop: spacing.xxl, marginBottom: spacing.sm },
