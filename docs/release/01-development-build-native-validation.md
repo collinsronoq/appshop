@@ -38,7 +38,7 @@ The intended build command is:
 npx eas-cli@latest build --profile development --platform android --non-interactive
 ```
 
-EAS project `@collinsrono/household-shopping` is linked with project ID `6814b859-765a-4096-82df-630e70473699`. The first build failed because npm 10 rejected an incomplete lockfile; regenerating `package-lock.json` with npm 10 fixed the install path. Replacement build `cfbe96cf-9ba7-4064-a9fb-220e8a3e3390` was submitted with the approved source upload and is compiling remotely.
+EAS project `@collinsrono/household-shopping` is linked with project ID `6814b859-765a-4096-82df-630e70473699`. The first build failed because npm 10 rejected an incomplete lockfile; regenerating `package-lock.json` with npm 10 fixed the install path. Replacement build `cfbe96cf-9ba7-4064-a9fb-220e8a3e3390` completed successfully with the approved source upload and installed on `emulator-5554`.
 
 The preceding successful build (`b1d919a4-a90f-4d54-8fc3-5ef5b9e69fe1`) installed on `emulator-5554` as `com.example.householdshopping`. It launched outside Expo Go, loaded Metro through `10.0.2.2:8083`, reached login, completed native registration/login and household creation through the local API, and restored the authenticated dashboard after restart. The initial runtime bundle failure was fixed by replacing the notification split-bundle import with a guarded synchronous require and adding `expo-splash-screen` for the replacement binary.
 
@@ -102,11 +102,11 @@ Substitution image upload is still not exposed by the current backend/mobile con
 - Backend pytest: 13 passed, 43 PostgreSQL-dependent tests skipped because no dedicated test database was configured
 - Focused product-image tests: 2 passed
 - `git diff --check`: passed
-- Native build/install: first APK installed and validated; replacement build is in progress
+- Native build/install: replacement APK finished and installed successfully
 
 ## Remaining acceptance work
 
-After the replacement build completes:
+For the next validation pass:
 
 1. Produce and install the development APK on `emulator-5554`.
 2. Confirm the AppShop package launches outside Expo Go and reaches the emulator API base URL.
