@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import { AppShellProvider, AppTopBar, BackHeader } from "./components";
+import { AppShellProvider, AppTopBar, BackHeader, ModalSheet } from "./components";
 
 describe("AppTopBar", () => {
   it("renders the root identity and global actions", () => {
@@ -29,5 +29,17 @@ describe("AppTopBar", () => {
     expect(screen.queryByText("Duplicate title")).toBeNull();
     fireEvent.press(screen.getByLabelText("Go back"));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ModalSheet", () => {
+  it("closes from the backdrop or the explicit close button", () => {
+    const onClose = jest.fn();
+    render(<ModalSheet onClose={onClose} title="Item actions"><></></ModalSheet>);
+
+    fireEvent.press(screen.getByLabelText("Dismiss modal"));
+    fireEvent.press(screen.getByLabelText("Close modal"));
+
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,7 +1,6 @@
 import { authApiClient } from "../auth/api-client";
 import type { HouseholdProduct, ProductCategory } from "./types";
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../config/runtime";
 export type ProductImageUpload = { uri: string; fileName?: string | null; mimeType?: string | null };
 
 export function resolveProductImageUrl(url: string | null | undefined): string | undefined {

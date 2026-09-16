@@ -168,6 +168,19 @@ describe("AuthApiClient", () => {
     );
   });
 
+  it("reports the configured API URL when the network request cannot start", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("Network request failed"));
+    const client = new AuthApiClient("http://192.168.160.251:8000/api/v1");
+
+    await expect(
+      client.login({ email: USER.email, password: "valid-password" })
+    ).rejects.toMatchObject({
+      code: "API_UNREACHABLE",
+      status: 0,
+      message: expect.stringContaining("http://192.168.160.251:8000/api/v1")
+    });
+  });
+
   it("lets fetch set the multipart boundary for authenticated form data", async () => {
     fetchMock.mockResolvedValueOnce(response(200, {
       user: USER,

@@ -8,8 +8,7 @@ import type {
   User
 } from "./types";
 import { pushStorage } from "../notifications/storage";
-
-const DEFAULT_API_BASE_URL = "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../config/runtime";
 
 export class AuthApiError extends Error {
   constructor(
@@ -38,7 +37,7 @@ export class AuthApiClient implements AuthClient {
   private readonly baseUrl: string;
 
   constructor(
-    baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+    baseUrl = API_BASE_URL,
     private readonly storage: RefreshTokenStorage = refreshTokenStorage
   ) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
@@ -115,10 +114,19 @@ export class AuthApiClient implements AuthClient {
     init: RequestInit,
     mayRetry: boolean
   ): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: this.headers(init.headers, this.accessToken, init.body)
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: this.headers(init.headers, this.accessToken, init.body)
+      });
+    } catch {
+      throw new AuthApiError(
+        `Unable to reach the API at ${this.baseUrl}. Check that your phone and computer are on the same network.`,
+        "API_UNREACHABLE",
+        0
+      );
+    }
     if (response.status === 401 && mayRetry && this.refreshToken) {
       await this.refreshAccessToken();
       return this.requestWithAccessToken<T>(path, init, false);
@@ -127,10 +135,19 @@ export class AuthApiClient implements AuthClient {
   }
 
   private async publicRequest<T>(path: string, init: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: this.headers(init.headers, null, init.body)
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: this.headers(init.headers, null, init.body)
+      });
+    } catch {
+      throw new AuthApiError(
+        `Unable to reach the API at ${this.baseUrl}. Check that your phone and computer are on the same network.`,
+        "API_UNREACHABLE",
+        0
+      );
+    }
     return this.parseResponse<T>(response);
   }
 

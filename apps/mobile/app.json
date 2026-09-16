@@ -20,16 +20,25 @@
       ],
       "expo-asset",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "android": {
-      "package": "com.example.householdshopping"
+      "package": "com.collinsrono.appshop",
+      "versionCode": 2
     },
     "ios": {
-      "bundleIdentifier": "com.example.householdshopping"
+      "bundleIdentifier": "com.collinsrono.appshop"
     },
     "extra": {
       "router": {},

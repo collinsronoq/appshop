@@ -3,6 +3,7 @@ import Feather from "@expo/vector-icons/Feather";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -110,6 +111,23 @@ export function AppTopBar({
       </View>
     </View>
   );
+}
+
+export function ModalSheet({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
+  return <Modal transparent animationType="slide" visible onRequestClose={onClose}>
+    <View style={styles.modalBackdrop}>
+      <Pressable accessibilityLabel="Dismiss modal" accessibilityRole="button" onPress={onClose} style={StyleSheet.absoluteFill} />
+      <View style={styles.modalSheet}>
+        <View style={styles.modalSheetHeader}>
+          <Text style={styles.modalSheetTitle}>{title}</Text>
+          <Pressable accessibilityLabel="Close modal" accessibilityRole="button" onPress={onClose} style={styles.modalSheetClose}>
+            <Feather color={colors.text} name="x" size={iconSizes.md} />
+          </Pressable>
+        </View>
+        {children}
+      </View>
+    </View>
+  </Modal>;
 }
 
 export function BackHeader({ title, subtitle, onBack, right }: { title: string; subtitle?: string; onBack: () => void; right?: ReactNode }) {
@@ -259,6 +277,11 @@ const styles = StyleSheet.create({
   topBarAvatar: { width: 38, height: 38, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
   topBarAvatarText: { ...typography.caption, color: colors.surface, fontWeight: "800" },
   notificationBadge: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: radius.round, backgroundColor: colors.warning },
+  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(20,38,29,.28)" },
+  modalSheet: { gap: spacing.md, backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.xl, paddingBottom: spacing.xxxl },
+  modalSheetHeader: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
+  modalSheetTitle: { ...typography.sectionTitle, color: colors.text, flex: 1 },
+  modalSheetClose: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   screenTitle: { ...typography.screenTitle, color: colors.text },
   headerSubtitle: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
   sectionHeader: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
