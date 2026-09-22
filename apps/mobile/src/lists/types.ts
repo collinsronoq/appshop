@@ -1,2 +1,2 @@
-export type ShoppingListItem={id:string;household_product_id?:string|null;name:string;brand?:string|null;variant?:string|null;size_value?:number|null;size_unit?:string|null;requested_quantity:number;notes?:string|null;position:number};
+export type ShoppingListItem={id:string;household_product_id?:string|null;name:string;brand?:string|null;variant?:string|null;size_value?:number|null;size_unit?:string|null;image_url?:string|null;category_slug?:string|null;requested_quantity:number;notes?:string|null;position:number};
 export type ShoppingList={id:string;name:string;status:string;version:number;item_count:number;created_at:string;updated_at:string;items?:ShoppingListItem[]};

@@ -27,7 +27,7 @@ export function ListDetailScreen() {
       <View style={styles.listSummaryHeader}>
         <View style={styles.listSummaryCopy}>
           <Text numberOfLines={2} style={styles.listTitle}>{data.name}</Text>
-          <Text style={styles.meta}>{data.item_count} item{data.item_count === 1 ? "" : "s"} · {live === "live" ? "Live updates" : "Offline-ready"}</Text>
+          <Text style={styles.meta}>{data.item_count} item{data.item_count === 1 ? "" : "s"} · {live === "live" ? "Live updates" : live === "connecting" ? "Connecting updates…" : "Updates unavailable"}</Text>
         </View>
         <IconButton icon="more-vertical" label="List actions" onPress={() => setMenu("list")} />
       </View>

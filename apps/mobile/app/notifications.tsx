@@ -1,7 +1,8 @@
 import Constants from "expo-constants";
+import Feather from "@expo/vector-icons/Feather";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { Platform, StyleSheet, Text } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { AppScreen, BackHeader, InlineError, PrimaryButton, SecondaryButton, SurfaceCard } from "../src/design/components";
 import { colors, spacing, typography } from "../src/design/theme";
 import { pushNotificationApi } from "../src/notifications/api-client";
@@ -59,7 +60,34 @@ export default function NotificationsSettings() {
 
   const statusLabel = status === "granted" ? "Notifications enabled" : status === "denied" ? "Notifications disabled" : status === "unavailable" ? "Requires a development build" : "Permission not requested";
 
-  return <AppScreen><BackHeader title="Notifications" onBack={() => router.back()} /><Text style={styles.intro}>Replacement decisions and requests from your household appear here.</Text><SurfaceCard><Text style={styles.title}>Device status</Text><Text style={styles.status}>{statusLabel}</Text>{error ? <InlineError message={error} /> : null}{status === "granted" ? <SecondaryButton label="Turn off notifications" icon="bell-off" onPress={() => void disable()} /> : status === "unavailable" ? <PrimaryButton label="Enable in a development build" icon="bell" disabled onPress={() => undefined} /> : <PrimaryButton label="Enable notifications" icon="bell" loading={saving} onPress={() => void enable()} />}</SurfaceCard><SurfaceCard><Text style={styles.title}>What you’ll receive</Text><Text style={styles.meta}>Replacement requests needing your approval</Text><Text style={styles.meta}>Approval decisions on requests you sent</Text></SurfaceCard></AppScreen>;
+  return <AppScreen>
+    <BackHeader title="Notifications" onBack={() => router.back()} />
+    <Text style={styles.intro}>Replacement decisions and requests from your household appear here.</Text>
+    <SurfaceCard style={[styles.card, styles.deviceCard]}>
+      <Text style={styles.title}>Device status</Text>
+      <Text style={styles.status}>{statusLabel}</Text>
+      {error ? <InlineError message={error} /> : null}
+      {status === "granted" ? <SecondaryButton label="Turn off notifications" icon="bell-off" onPress={() => void disable()} /> : status === "unavailable" ? <PrimaryButton label="Enable in a development build" icon="bell" disabled onPress={() => undefined} /> : <PrimaryButton label="Enable notifications" icon="bell" loading={saving} onPress={() => void enable()} />}
+    </SurfaceCard>
+    <SurfaceCard style={[styles.card, styles.receiveCard]}>
+      <Text style={styles.title}>What you’ll receive</Text>
+      <View style={styles.receiveList}>
+        <View style={styles.receiveRow}><View style={styles.receiveIcon}><Feather color={colors.primary} name="repeat" size={14} /></View><Text style={styles.meta}>Replacement requests needing your approval</Text></View>
+        <View style={styles.receiveRow}><View style={styles.receiveIcon}><Feather color={colors.primary} name="check-circle" size={14} /></View><Text style={styles.meta}>Approval decisions on requests you sent</Text></View>
+      </View>
+    </SurfaceCard>
+  </AppScreen>;
 }
 
-const styles = StyleSheet.create({ intro: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.lg }, title: { ...typography.cardTitle, color: colors.text }, status: { ...typography.bodyStrong, color: colors.primary, marginTop: spacing.xs, marginBottom: spacing.md }, meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.sm } });
+const styles = StyleSheet.create({
+  intro: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl },
+  card: { marginBottom: spacing.md },
+  deviceCard: { gap: spacing.xs },
+  receiveCard: { paddingBottom: spacing.lg },
+  title: { ...typography.cardTitle, color: colors.text },
+  status: { ...typography.bodyStrong, color: colors.primary, marginTop: spacing.xs, marginBottom: spacing.md },
+  receiveList: { gap: spacing.md, marginTop: spacing.sm },
+  receiveRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  receiveIcon: { width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: 999, backgroundColor: colors.primarySubtle, marginTop: 1 },
+  meta: { ...typography.secondary, color: colors.textSecondary, flex: 1 }
+});

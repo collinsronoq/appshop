@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useState, type ComponentProps } from "react";
+import Feather from "@expo/vector-icons/Feather";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppScreen, BackHeader, InlineError, LoadingState, PrimaryButton, SecondaryButton } from "../design/components";
@@ -74,9 +75,8 @@ export function ProductForm({ initial, title, onSave }: { initial?: HouseholdPro
     <AppScreen keyboardSafe>
       <BackHeader title={title} onBack={() => router.back()} />
       <View style={styles.photoArea}>
-        {previewUri && failedPreviewUri !== previewUri ? <Image accessibilityLabel="Selected product photo" onError={() => setFailedPreviewUri(previewUri)} source={{ uri: previewUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder}><Text style={styles.photoPlaceholderText}>{previewUri && failedPreviewUri === previewUri ? "Photo unavailable" : "No photo selected"}</Text></View>}
-        <SecondaryButton label={previewUri ? "Change photo" : "Add photo"} icon="image" onPress={() => void pickImage()} />
-        {image ? <Pressable accessibilityRole="button" onPress={() => setImage(undefined)}><Text style={styles.removePhoto}>Remove selected photo</Text></Pressable> : null}
+        <View style={styles.photoThumb}>{previewUri && failedPreviewUri !== previewUri ? <Image accessibilityLabel="Selected product photo" onError={() => setFailedPreviewUri(previewUri)} source={{ uri: previewUri }} style={styles.photo} /> : <View style={styles.photoPlaceholder}>{previewUri && failedPreviewUri === previewUri ? <Text style={styles.photoPlaceholderText}>Unavailable</Text> : <Feather color={colors.sageStrong} name="image" size={24} />}</View>}</View>
+        <View style={styles.photoActions}><Text style={styles.photoTitle}>Photo · optional</Text><Text style={styles.photoHelp}>Add a clear photo to help identify this item.</Text><SecondaryButton compact fullWidth={false} label={previewUri ? "Change photo" : "Add photo"} icon="image" onPress={() => void pickImage()} />{image ? <Pressable accessibilityRole="button" onPress={() => setImage(undefined)}><Text style={styles.removePhoto}>Remove selected photo</Text></Pressable> : null}</View>
       </View>
       <Text style={styles.section}>Product details</Text>
       <Field label="Name *" value={name} onChangeText={setName} placeholder="e.g. Whole milk" />
@@ -125,11 +125,15 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
 
 const styles = StyleSheet.create({
   section: { ...typography.sectionTitle, color: colors.text, marginBottom: spacing.md },
-  photoArea: { gap: spacing.sm, marginBottom: spacing.lg },
-  photo: { width: "100%", height: 180, borderRadius: radius.lg },
-  photoPlaceholder: { height: 112, borderRadius: radius.lg, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
-  photoPlaceholderText: { ...typography.secondary, color: colors.textSecondary },
-  removePhoto: { ...typography.secondary, color: colors.danger, textAlign: "center", paddingVertical: spacing.sm },
+  photoArea: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.xl, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, padding: spacing.md },
+  photoThumb: { width: 72, height: 72, overflow: "hidden", borderRadius: radius.md },
+  photo: { width: "100%", height: "100%" },
+  photoPlaceholder: { flex: 1, borderRadius: radius.md, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center", padding: spacing.sm },
+  photoPlaceholderText: { ...typography.caption, color: colors.textSecondary, textAlign: "center" },
+  photoActions: { flex: 1, alignItems: "flex-start", gap: spacing.xs },
+  photoTitle: { ...typography.cardTitle, color: colors.text },
+  photoHelp: { ...typography.secondary, fontSize: 12, lineHeight: 17, color: colors.textSecondary, marginBottom: spacing.xs },
+  removePhoto: { ...typography.caption, color: colors.danger, paddingVertical: spacing.xs },
   field: { marginBottom: spacing.md },
   label: { ...typography.secondary, color: colors.text, fontWeight: "700", marginBottom: spacing.xs },
   input: { minHeight: 48, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, ...typography.body, color: colors.text },

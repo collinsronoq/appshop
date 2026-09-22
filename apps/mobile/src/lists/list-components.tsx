@@ -6,6 +6,7 @@ import { SurfaceCard } from "../design/components";
 import { formatQuantity, formatSize } from "../design/format";
 import type { ShoppingList, ShoppingListItem } from "./types";
 import type { ShoppingTrip } from "../trips/types";
+import { ListArtwork, ProductArtwork } from "../products/product-images";
 
 export function formatUpdated(value: string) {
   const date = new Date(value);
@@ -37,6 +38,7 @@ export function ShoppingListCard({
     <SurfaceCard style={[styles.listCard, archived ? styles.archivedCard : null]}>
       <Pressable accessibilityRole="button" onPress={onOpen} style={({ pressed }) => [styles.cardPress, pressed ? styles.pressed : null]}>
         <View style={styles.cardHeader}>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.listArtwork}><ListArtwork items={list.items} name={list.name} /></View>
           <View style={styles.flex}>
             <Text numberOfLines={1} style={styles.listName}>{list.name}</Text>
             <Text style={styles.meta}>{list.item_count} item{list.item_count === 1 ? "" : "s"} · {formatUpdated(list.updated_at)}</Text>
@@ -60,7 +62,7 @@ export function ListItemRow({ item, onMenu }: { item: ShoppingListItem; onMenu: 
   const metadata = [...[item.brand, item.variant, formatSize(item.size_value, item.size_unit)].filter(Boolean), `Qty ${formatQuantity(item.requested_quantity)}`].join(" · ");
   return (
     <View style={styles.itemRow}>
-      <View style={styles.itemIcon}><Feather color={colors.primary} name={item.household_product_id ? "package" : "edit-3"} size={18} /></View>
+      <View style={styles.itemIcon}>{item.household_product_id ? <ProductArtwork categorySlug={item.category_slug} imageUrl={item.image_url} name={item.name} /> : <Feather color={colors.primary} name="edit-3" size={18} />}</View>
       <View style={styles.flex}>
         <Text numberOfLines={2} style={styles.itemName}>{item.name}</Text>
         <Text numberOfLines={2} style={styles.meta}>{metadata}</Text>
@@ -82,6 +84,7 @@ const styles = StyleSheet.create({
   archivedCard: { opacity: 0.78 },
   cardPress: { gap: spacing.sm },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  listArtwork: { width: 52, height: 52, overflow: "hidden", borderRadius: radius.md, backgroundColor: colors.primarySubtle },
   listName: { ...typography.cardTitle, color: colors.text, fontSize: 17 },
   meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
   activeSummary: { backgroundColor: colors.primarySubtle, borderRadius: radius.md, padding: spacing.md },
@@ -92,7 +95,7 @@ const styles = StyleSheet.create({
   continueButton: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.md, marginTop: spacing.md },
   continueText: { ...typography.bodyStrong, color: colors.surface },
   itemRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  itemIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
+  itemIcon: { width: 44, height: 44, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
   itemName: { ...typography.cardTitle, color: colors.text },
   note: { ...typography.secondary, color: colors.textSecondary, fontStyle: "italic", marginTop: spacing.xs },
   menuButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },

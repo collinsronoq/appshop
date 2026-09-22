@@ -35,7 +35,8 @@
     },
     "android": {
       "package": "com.collinsrono.appshop",
-      "versionCode": 2
+      "versionCode": 2,
+      "softwareKeyboardLayoutMode": "resize"
     },
     "ios": {
       "bundleIdentifier": "com.collinsrono.appshop"
