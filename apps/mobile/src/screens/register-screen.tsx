@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { AuthApiError } from "../auth/api-client";
 import { useAuth } from "../auth/auth-context";
 import { validateRegistration } from "../auth/validation";
-import { AuthScreen, authStyles } from "../components/auth-screen";
+import { AuthPasswordField, AuthScreen, authStyles } from "../components/auth-screen";
 
 export function RegisterScreen() {
   const router = useRouter();
@@ -46,14 +46,17 @@ export function RegisterScreen() {
 
   return (
     <AuthScreen
-      title="Create your account"
+      title="Make room for easier shopping."
       subtitle="Start a private shopping space for you and your household."
+      formTitle="Create account"
+      onWelcome={() => router.replace(invite ? { pathname: "/", params: { invite } } : "/")}
+      variant="signup"
       footer={
         <Text style={authStyles.footerText}>
           Already have an account?{" "}
           <Text
             accessibilityRole="link"
-            onPress={() => router.push("/login")}
+            onPress={() => router.push(invite ? { pathname: "/login", params: { invite } } : "/login")}
             style={authStyles.footerLink}
           >
             Sign in
@@ -85,7 +88,7 @@ export function RegisterScreen() {
         value={email}
       />
       <Text style={authStyles.label}>Password</Text>
-      <TextInput
+      <AuthPasswordField
         accessibilityLabel="Password"
         autoCapitalize="none"
         autoComplete="new-password"
@@ -93,8 +96,6 @@ export function RegisterScreen() {
         onChangeText={setPassword}
         onSubmitEditing={() => void submit()}
         returnKeyType="done"
-        secureTextEntry
-        style={authStyles.input}
         value={password}
       />
       {error ? (

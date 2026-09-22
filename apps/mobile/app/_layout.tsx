@@ -1,7 +1,9 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
+import { useFonts } from "expo-font";
+import Feather from "@expo/vector-icons/Feather";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "../src/auth/auth-context";
@@ -9,6 +11,7 @@ import { AppShellProvider, AppTopBar } from "../src/design/components";
 import { colors } from "../src/design/theme";
 import { HouseholdProvider } from "../src/households/household-context";
 import { NotificationCoordinatorHost } from "../src/notifications/notification-coordinator-host";
+import { LoadingScreen } from "../src/components/loading-screen";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +27,7 @@ function nestedTitle(pathname: string) {
   if (pathname.match(/^\/products\/[^/]+\/history/)) return "Product history";
   if (pathname.match(/^\/products\/[^/]+/)) return "Product detail";
   if (pathname === "/purchases") return "Purchase History";
-  if (pathname === "/purchasing-memory") return "Purchasing Memory";
+  if (pathname === "/purchasing-memory") return "Buy Again";
   if (pathname === "/members") return "Members";
   if (pathname === "/invite") return "Invite member";
   if (pathname === "/households") return "Switch household";
@@ -45,6 +48,8 @@ function AuthenticatedStack() {
   const isRoot = ROOT_PATHS.has(pathname) || pathname.includes("/(tabs)");
   const showShell = status === "authenticated" && !isPublicRoute;
   const initials = user?.display_name || user?.email || "U";
+  const productMatch = pathname.match(/^\/products\/([^/]+)$/);
+  const productId = productMatch?.[1];
 
   if (!showShell) return <Stack screenOptions={{ headerShown: false }} />;
   return (
@@ -55,6 +60,12 @@ function AuthenticatedStack() {
           onBack={() => router.back()}
           onNotifications={() => router.push("/substitutions")}
           onProfile={() => router.push("/profile")}
+          right={productId && productId !== "new" ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/products/edit", params: { id: decodeURIComponent(productId) } })} style={styles.editAction}>
+              <Feather color={colors.primary} name="edit-2" size={16} />
+              <Text style={styles.editActionText}>Edit</Text>
+            </Pressable>
+          ) : undefined}
           title={nestedTitle(pathname)}
           variant={isRoot ? "root" : "nested"}
         />
@@ -65,17 +76,29 @@ function AuthenticatedStack() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    AppShopSans: require("../assets/fonts/DejaVuSans.ttf"),
+    AppShopSansBold: require("../assets/fonts/DejaVuSans-Bold.ttf"),
+    AppShopSerifBold: require("../assets/fonts/DejaVuSerif-Bold.ttf")
+  });
+
+  if (!fontsLoaded) return <LoadingScreen />;
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <HouseholdProvider>
           <NotificationCoordinatorHost />
           <AuthenticatedStack />
-          <StatusBar style="auto" />
+          <StatusBar style="dark" />
         </HouseholdProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
 
-const styles = StyleSheet.create({ shell: { flex: 1, backgroundColor: colors.background } });
+const styles = StyleSheet.create({
+  shell: { flex: 1, backgroundColor: colors.background },
+  editAction: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8 },
+  editActionText: { fontFamily: "AppShopSansBold", fontSize: 14, color: colors.primary }
+});

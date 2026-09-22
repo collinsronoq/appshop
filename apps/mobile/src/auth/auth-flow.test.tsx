@@ -14,9 +14,12 @@ import { LoginScreen } from "../screens/login-screen";
 import { RegisterScreen } from "../screens/register-screen";
 import { AppShellProvider, AppTopBar } from "../design/components";
 
+const mockPush = jest.fn();
+const mockReplace = jest.fn();
+let mockParams: { invite?: string } = {};
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
-  useLocalSearchParams: () => ({})
+  useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn() }),
+  useLocalSearchParams: () => mockParams
 }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(async () => null),
@@ -100,9 +103,31 @@ function renderFlow(client: AuthClient, authScreen: ReactNode = <LoginScreen />,
 }
 
 describe("mobile authentication flow", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockParams = {};
+  });
+
   it("shows login after an unauthenticated startup", async () => {
     renderFlow(new FakeAuthClient());
-    expect(await screen.findByText("Welcome back", {}, { timeout: 5000 })).toBeTruthy();
+    expect(await screen.findByText("Back to shopping together.", {}, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByLabelText("Email")).toBeTruthy();
+    expect(screen.getByLabelText("Password")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Show password"));
+    expect(screen.getByLabelText("Hide password")).toBeTruthy();
+  });
+
+  it("returns directly to Welcome and preserves an invitation", async () => {
+    mockParams = { invite: "invite-123" };
+    renderFlow(new FakeAuthClient());
+    fireEvent.press(await screen.findByText("Welcome"));
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: "/", params: { invite: "invite-123" } });
+  });
+
+  it("offers the same direct-safe Welcome action on signup", async () => {
+    renderFlow(new FakeAuthClient(), <RegisterScreen />);
+    fireEvent.press(await screen.findByText("Welcome"));
+    expect(mockReplace).toHaveBeenCalledWith("/");
   });
 
   it("enters the authenticated shell after login", async () => {
@@ -111,7 +136,7 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
     fireEvent.press(screen.getByText("Sign in"));
     expect(await screen.findByText("AppShop")).toBeTruthy();
-    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
+    expect(await screen.findByText("Shopping Lists")).toBeTruthy();
   });
 
   it("enters the authenticated shell after registration", async () => {
@@ -119,9 +144,9 @@ describe("mobile authentication flow", () => {
     fireEvent.changeText(await screen.findByLabelText("Display name"), "Jane");
     fireEvent.changeText(screen.getByLabelText("Email"), "jane@example.com");
     fireEvent.changeText(screen.getByLabelText("Password"), "correct horse battery staple");
-    fireEvent.press(screen.getByText("Create account"));
+    fireEvent.press(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText("AppShop")).toBeTruthy();
-    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
+    expect(await screen.findByText("Shopping Lists")).toBeTruthy();
   });
 
   it("displays a generic invalid-login error", async () => {
@@ -143,7 +168,7 @@ describe("mobile authentication flow", () => {
     client.restoredUser = USER;
     renderFlow(client);
     expect(await screen.findByText("AppShop")).toBeTruthy();
-    expect(await screen.findByText("Ready for the next shop?")).toBeTruthy();
+    expect(await screen.findByText("Shopping Lists")).toBeTruthy();
   });
 
   it("returns to login after logout", async () => {
@@ -152,6 +177,6 @@ describe("mobile authentication flow", () => {
     renderFlow(client, <LoginScreen />, <LogoutControl />);
     fireEvent.press(await screen.findByText("Log out"));
     await waitFor(() => expect(client.logoutCalls).toBe(1));
-    expect(await screen.findByText("Welcome back")).toBeTruthy();
+    expect(await screen.findByText("Back to shopping together.")).toBeTruthy();
   });
 });

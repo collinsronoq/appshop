@@ -54,7 +54,7 @@ describe("Home", () => {
     expect(screen.getByText("Add product")).toBeTruthy();
   });
 
-  it("routes top-bar actions and keeps quick actions before memory", async () => {
+  it("routes top-bar actions and keeps household content ahead of utilities", async () => {
     const view = renderHome();
     expect(await screen.findByText("No shopping lists yet")).toBeTruthy();
     fireEvent.press(screen.getByLabelText("Open profile"));
@@ -63,9 +63,9 @@ describe("Home", () => {
     expect(mockPush).toHaveBeenCalledWith("/substitutions");
 
     const rendered = JSON.stringify(view.toJSON());
-    expect(rendered.indexOf("Quick actions")).toBeLessThan(rendered.indexOf("Shopping Lists"));
-    expect(rendered.indexOf("Shopping Lists")).toBeLessThan(rendered.indexOf("Recently purchased"));
-    expect(rendered.indexOf("Recently purchased")).toBeLessThan(rendered.indexOf("Frequently bought"));
+    expect(rendered.indexOf("Shopping Lists")).toBeLessThan(rendered.indexOf("Buy Again"));
+    expect(rendered.indexOf("Buy Again")).toBeLessThan(rendered.indexOf("Frequently bought"));
+    expect(rendered.indexOf("Frequently bought")).toBeLessThan(rendered.indexOf("Quick actions"));
   });
 
   it("hides the owner-only Invite member action for household members", async () => {
@@ -97,18 +97,37 @@ describe("Home", () => {
     mockedRecent.mockRejectedValue(new Error("offline"));
     renderHome();
 
-    expect(await screen.findByText("Groceries")).toBeTruthy();
+    expect((await screen.findAllByText("Groceries")).length).toBe(2);
     expect(await screen.findByText("Couldn't load this section.")).toBeTruthy();
     expect(screen.getByText("Frequently bought")).toBeTruthy();
+  });
+
+  it("shows compact previews from list data without extra list decoration requests", async () => {
+    mockedLists.mockResolvedValue([
+      { id: "l1", name: "Friday Shopping", status: "active", version: 1, item_count: 2, created_at: "", updated_at: "", items: [
+        { id: "i1", name: "Whole milk", requested_quantity: 1, position: 0 },
+        { id: "i2", name: "Sourdough bread", requested_quantity: 1, position: 1 }
+      ] },
+      { id: "l2", name: "A very long household essentials list name", status: "active", version: 1, item_count: 1, created_at: "", updated_at: "" },
+      { id: "l3", name: "Not shown", status: "active", version: 1, item_count: 1, created_at: "", updated_at: "" }
+    ]);
+    renderHome();
+
+    expect(await screen.findByText("Whole milk · Sourdough bread")).toBeTruthy();
+    expect(screen.getAllByLabelText("Whole milk image", { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText("Sourdough bread image", { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText("Shopping list shopping basket artwork", { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Not shown")).toBeNull();
+    expect(mockedLists).toHaveBeenCalledTimes(1);
   });
 
   it("rebinds all content to the selected household", async () => {
     mockedLists.mockImplementation(async (id) => id === "h1" ? [{ id: "l1", name: "Old household list", status: "active", version: 1, item_count: 1, created_at: "", updated_at: "" }] : [{ id: "l2", name: "New household list", status: "active", version: 1, item_count: 1, created_at: "", updated_at: "" }]);
     const view = renderHome();
-    expect(await screen.findByText("Old household list")).toBeTruthy();
+    expect((await screen.findAllByText("Old household list")).length).toBe(2);
     mockHousehold = { ...mockHousehold, id: "h2", name: "Second Home" };
     view.rerender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })}><AppShellProvider><AppTopBar initials="Jane" onNotifications={() => mockPush("/substitutions")} onProfile={() => mockPush("/profile")} /><HomeScreen /></AppShellProvider></QueryClientProvider>);
-    expect(await screen.findByText("New household list")).toBeTruthy();
+    expect((await screen.findAllByText("New household list")).length).toBe(2);
     await waitFor(() => expect(screen.queryByText("Old household list")).toBeNull());
     expect(screen.getByLabelText("Switch household. Current household Second Home")).toBeTruthy();
   });

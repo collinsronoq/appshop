@@ -20,6 +20,26 @@ import { colors, iconSizes, radius, shadows, spacing, touchTargets, typography }
 
 export type IconName = ComponentProps<typeof Feather>["name"];
 
+export function BrandMark({ size = 40 }: { size?: number }) {
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.brandMark, { width: size, height: size, borderRadius: Math.round(size * 0.32) }]}>
+      <Feather color={colors.surface} name="shopping-bag" size={Math.round(size * 0.52)} />
+      <View style={styles.brandLeaf} />
+    </View>
+  );
+}
+
+export function GroceryPattern() {
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={styles.pattern}>
+      <Feather color={colors.sage} name="shopping-bag" size={36} style={[styles.patternIcon, { left: -8, top: 88, transform: [{ rotate: "-12deg" }] }]} />
+      <Feather color={colors.sage} name="coffee" size={28} style={[styles.patternIcon, { right: 20, top: 180, transform: [{ rotate: "10deg" }] }]} />
+      <Feather color={colors.sage} name="package" size={30} style={[styles.patternIcon, { left: 24, bottom: 130, transform: [{ rotate: "8deg" }] }]} />
+      <Feather color={colors.sage} name="home" size={32} style={[styles.patternIcon, { right: -4, bottom: 54, transform: [{ rotate: "-8deg" }] }]} />
+    </View>
+  );
+}
+
 type AppScreenProps = PropsWithChildren<{
   scroll?: boolean;
   keyboardSafe?: boolean;
@@ -38,8 +58,9 @@ export function AppScreen({ children, scroll = true, keyboardSafe = false, conte
   const shellOwnsSafeArea = useContext(AppShellContext);
   const body = scroll ? (
     <ScrollView
-      automaticallyAdjustKeyboardInsets
+      automaticallyAdjustKeyboardInsets={!keyboardSafe}
       contentContainerStyle={[styles.screenContent, contentStyle]}
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       keyboardShouldPersistTaps="handled"
       refreshControl={refreshControl}
       showsVerticalScrollIndicator={false}
@@ -82,7 +103,9 @@ export function AppTopBar({
   onNotifications,
   onProfile,
   onBack,
-  showProfile = true
+  right,
+  showProfile = true,
+  showActions = variant === "root"
 }: {
   variant?: "root" | "nested";
   title?: string;
@@ -91,14 +114,16 @@ export function AppTopBar({
   onNotifications: () => void;
   onProfile: () => void;
   onBack?: () => void;
+  right?: ReactNode;
   showProfile?: boolean;
+  showActions?: boolean;
 }) {
   const avatarInitials = initials.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return (
     <View accessibilityRole="header" style={styles.topBar}>
       {variant === "nested" ? <Pressable accessibilityLabel="Go back" accessibilityRole="button" disabled={!onBack} onPress={onBack} style={styles.topBarAction}><Feather color={colors.text} name="arrow-left" size={iconSizes.md} /></Pressable> : null}
-      {variant === "root" ? <Text style={styles.appIdentity}>AppShop</Text> : <Text ellipsizeMode="tail" numberOfLines={1} style={styles.nestedTitle}>{title ?? "AppShop"}</Text>}
-      <View style={styles.topBarActions}>
+      {variant === "root" ? <View style={styles.identityRow}><BrandMark size={34} /><Text style={styles.appIdentity}>AppShop</Text></View> : <Text ellipsizeMode="tail" numberOfLines={1} style={styles.nestedTitle}>{title ?? "AppShop"}</Text>}
+      {variant === "nested" && right ? <View style={styles.topBarRight}>{right}</View> : showActions ? <View style={styles.topBarActions}>
         <Pressable accessibilityLabel="Open notifications" accessibilityRole="button" onPress={onNotifications} style={styles.topBarAction}>
           <Feather color={colors.primary} name="bell" size={iconSizes.md} />
           {notificationCount > 0 ? <View accessibilityLabel={`${notificationCount} pending notification${notificationCount === 1 ? "" : "s"}`} style={styles.notificationBadge} /> : null}
@@ -108,25 +133,27 @@ export function AppTopBar({
             <View style={styles.topBarAvatar}><Text style={styles.topBarAvatarText}>{avatarInitials}</Text></View>
           </Pressable>
         ) : null}
-      </View>
+      </View> : <View style={styles.topBarActionPlaceholder} />}
     </View>
   );
 }
 
 export function ModalSheet({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   return <Modal transparent animationType="slide" visible onRequestClose={onClose}>
-    <View style={styles.modalBackdrop}>
-      <Pressable accessibilityLabel="Dismiss modal" accessibilityRole="button" onPress={onClose} style={StyleSheet.absoluteFill} />
-      <View style={styles.modalSheet}>
-        <View style={styles.modalSheetHeader}>
-          <Text style={styles.modalSheetTitle}>{title}</Text>
-          <Pressable accessibilityLabel="Close modal" accessibilityRole="button" onPress={onClose} style={styles.modalSheetClose}>
-            <Feather color={colors.text} name="x" size={iconSizes.md} />
-          </Pressable>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.fill}>
+      <View style={styles.modalBackdrop}>
+        <Pressable accessibilityLabel="Dismiss modal" accessibilityRole="button" onPress={onClose} style={StyleSheet.absoluteFill} />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalSheetHeader}>
+            <Text style={styles.modalSheetTitle}>{title}</Text>
+            <Pressable accessibilityLabel="Close modal" accessibilityRole="button" onPress={onClose} style={styles.modalSheetClose}>
+              <Feather color={colors.text} name="x" size={iconSizes.md} />
+            </Pressable>
+          </View>
+          {children}
         </View>
-        {children}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   </Modal>;
 }
 
@@ -262,23 +289,30 @@ export function QuickAction({ icon, label, onPress }: { icon: IconName; label: s
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
-  screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.xxl, flexGrow: 1 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.sm },
+  screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.huge, flexGrow: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.lg },
   backHeader: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm },
   backButton: { width: touchTargets.minimum, height: touchTargets.minimum, alignItems: "center", justifyContent: "center" },
   backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
   headerCopy: { flex: 1, minWidth: 0 },
-  topBar: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs, paddingHorizontal: spacing.xl, backgroundColor: colors.appBarBackground, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.appBarBorder },
-  appIdentity: { ...typography.cardTitle, color: colors.text, fontSize: 19, lineHeight: 24, fontWeight: "800" },
+  brandMark: { alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  brandLeaf: { position: "absolute", width: 8, height: 5, top: 3, right: 5, borderTopLeftRadius: 8, borderBottomRightRadius: 8, backgroundColor: colors.sage },
+  pattern: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden", opacity: 0.11 },
+  patternIcon: { position: "absolute" },
+  topBar: { minHeight: 62, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs, paddingHorizontal: spacing.xl, backgroundColor: colors.appBarBackground, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.appBarBorder },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  appIdentity: { ...typography.sectionTitle, color: colors.primary, fontSize: 21, lineHeight: 26 },
   nestedTitle: { ...typography.cardTitle, color: colors.text, flex: 1, minWidth: 0 },
   nestedAction: { alignSelf: "flex-end", marginBottom: spacing.sm },
   topBarActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  topBarRight: { minHeight: touchTargets.comfortable, alignItems: "flex-end", justifyContent: "center" },
+  topBarActionPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
   topBarAction: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center" },
   topBarAvatar: { width: 38, height: 38, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
   topBarAvatarText: { ...typography.caption, color: colors.surface, fontWeight: "800" },
   notificationBadge: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: radius.round, backgroundColor: colors.warning },
   modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(20,38,29,.28)" },
-  modalSheet: { gap: spacing.md, backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.xl, paddingBottom: spacing.xxxl },
+  modalSheet: { gap: spacing.md, backgroundColor: colors.background, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, paddingBottom: spacing.xxxl },
   modalSheetHeader: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
   modalSheetTitle: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   modalSheetClose: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
@@ -288,7 +322,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.sectionTitle, color: colors.text },
   sectionAction: { minHeight: touchTargets.minimum, justifyContent: "center", paddingLeft: spacing.lg },
   sectionActionText: { ...typography.secondary, color: colors.primary, fontWeight: "700" },
-  button: { minHeight: touchTargets.comfortable, paddingHorizontal: spacing.lg, borderRadius: radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  button: { minHeight: 52, paddingHorizontal: spacing.lg, borderRadius: radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
   compactButton: { minHeight: touchTargets.minimum, paddingHorizontal: spacing.md },
   fullWidth: { alignSelf: "stretch" },
   primaryButton: { backgroundColor: colors.primary },
@@ -306,15 +340,15 @@ const styles = StyleSheet.create({
   inlineState: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm },
   inlineErrorText: { ...typography.secondary, color: colors.textSecondary, flex: 1 },
   retry: { ...typography.bodyStrong, color: colors.primary, paddingVertical: spacing.sm },
-  skeleton: { height: 62, borderRadius: radius.md, backgroundColor: colors.primarySubtle, marginBottom: spacing.sm, opacity: 0.6 },
-  emptyCard: { alignItems: "flex-start" },
+  skeleton: { height: 68, borderRadius: radius.lg, backgroundColor: colors.primarySubtle, marginBottom: spacing.sm, opacity: 0.72 },
+  emptyCard: { alignItems: "flex-start", backgroundColor: colors.backgroundQuiet },
   emptyIcon: { width: touchTargets.comfortable, height: touchTargets.comfortable, alignItems: "center", justifyContent: "center", borderRadius: radius.round, backgroundColor: colors.primarySubtle, marginBottom: spacing.md },
   emptyTitle: { ...typography.cardTitle, color: colors.text },
   emptyBody: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
   emptyAction: { alignSelf: "stretch", marginTop: spacing.lg },
   switcher: { alignSelf: "flex-start", maxWidth: "90%", minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md },
   switcherText: { ...typography.bodyStrong, color: colors.text, flexShrink: 1 },
-  quickAction: { flex: 1, minHeight: 84, alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.sm },
+  quickAction: { flex: 1, minHeight: 88, alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.sm },
   quickIcon: { width: 38, height: 38, borderRadius: radius.round, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
   quickLabel: { ...typography.caption, color: colors.text, fontWeight: "700", textAlign: "center" }
 });

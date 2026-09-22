@@ -1,21 +1,34 @@
-import { type PropsWithChildren, type ReactNode } from "react";
+import Feather from "@expo/vector-icons/Feather";
+import { useState, type ComponentProps, type PropsWithChildren, type ReactNode } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  useWindowDimensions,
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BrandMark, GroceryPattern } from "../design/components";
+import { colors, iconSizes, radius, spacing, touchTargets, typography } from "../design/theme";
 
 type AuthScreenProps = PropsWithChildren<{
   title: string;
   subtitle: string;
   footer: ReactNode;
+  formTitle: string;
+  onWelcome: () => void;
+  variant: "login" | "signup";
 }>;
 
-export function AuthScreen({ title, subtitle, footer, children }: AuthScreenProps) {
+export function AuthScreen({ title, subtitle, footer, formTitle, onWelcome, variant, children }: AuthScreenProps) {
+  const { height, fontScale } = useWindowDimensions();
+  const compact = height < 720 || fontScale > 1.15;
+  const illustrationHeight = variant === "signup" ? (compact ? 88 : 116) : (compact ? 104 : 148);
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -24,120 +37,164 @@ export function AuthScreen({ title, subtitle, footer, children }: AuthScreenProp
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={styles.brandMark} accessibilityElementsHidden>
-            <Text style={styles.brandGlyph}>H</Text>
+          <GroceryPattern />
+          <View style={styles.topRow}>
+            <Pressable accessibilityRole="button" onPress={onWelcome} style={styles.welcomeAction}>
+              <Feather color={colors.text} name="arrow-left" size={iconSizes.sm} />
+              <Text style={styles.welcomeText}>Welcome</Text>
+            </Pressable>
+            <View style={styles.brandRow}><BrandMark size={34} /><Text style={styles.wordmark}>AppShop</Text></View>
           </View>
-          <Text accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-          <View style={styles.form}>{children}</View>
-          <View style={styles.footer}>{footer}</View>
+          <View style={[styles.intro, compact ? styles.introCompact : null]}>
+            <View style={styles.introCopy}>
+              <Text accessibilityRole="header" style={styles.title}>{title}</Text>
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            </View>
+            <Image accessibilityElementsHidden importantForAccessibility="no-hide-descendants" resizeMode="contain" source={require("../../assets/images/welcome-groceries.png")} style={[styles.illustration, { height: illustrationHeight }]} />
+          </View>
+          <View style={styles.formSurface}>
+            <Text style={styles.formTitle}>{formTitle}</Text>
+            <View style={styles.form}>{children}</View>
+            <View style={styles.footer}>{footer}</View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+export function AuthPasswordField(props: ComponentProps<typeof TextInput>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={authStyles.inputWrap}>
+      <TextInput {...props} secureTextEntry={!visible} style={authStyles.inputInWrap} />
+      <Pressable accessibilityLabel={visible ? "Hide password" : "Show password"} accessibilityRole="button" onPress={() => setVisible((value) => !value)} style={authStyles.visibilityButton}>
+        <Feather color={colors.textSecondary} name={visible ? "eye-off" : "eye"} size={iconSizes.sm} />
+      </Pressable>
+    </View>
+  );
+}
+
 export const authStyles = StyleSheet.create({
   label: {
-    color: "#26352c",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 7
+    ...typography.secondary,
+    fontFamily: "AppShopSansBold",
+    color: colors.text,
+    marginBottom: spacing.sm
   },
   input: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: "#ccd4ce",
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    color: "#15251b",
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    fontFamily: "AppShopSans",
     fontSize: 16,
-    paddingHorizontal: 15,
-    marginBottom: 17
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg
+  },
+  inputWrap: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    marginBottom: spacing.lg
+  },
+  inputInWrap: {
+    flex: 1,
+    alignSelf: "stretch",
+    color: colors.text,
+    fontFamily: "AppShopSans",
+    fontSize: 16,
+    paddingHorizontal: spacing.lg
+  },
+  visibilityButton: {
+    width: touchTargets.comfortable,
+    height: touchTargets.comfortable,
+    alignItems: "center",
+    justifyContent: "center"
   },
   error: {
-    borderRadius: 10,
-    backgroundColor: "#fce9e7",
-    color: "#8b2b21",
-    fontSize: 14,
-    lineHeight: 20,
-    padding: 12,
-    marginBottom: 16
+    ...typography.secondary,
+    borderRadius: radius.md,
+    backgroundColor: colors.dangerSurface,
+    color: colors.danger,
+    padding: spacing.md,
+    marginBottom: spacing.lg
   },
   button: {
     minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "#245a43"
+    borderRadius: radius.md,
+    backgroundColor: colors.primary
   },
   buttonDisabled: {
     opacity: 0.55
   },
   buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700"
+    ...typography.bodyStrong,
+    color: colors.surface,
+    fontSize: 16
   },
   footerText: {
-    color: "#526057",
-    fontSize: 15,
+    ...typography.body,
+    color: colors.textSecondary,
     textAlign: "center"
   },
   footerLink: {
-    color: "#245a43",
-    fontWeight: "700"
+    color: colors.primary,
+    fontFamily: "AppShopSansBold"
   }
 });
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f7f4ed"
+    backgroundColor: colors.background
   },
   keyboardView: {
     flex: 1
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 36
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxxl
   },
-  brandMark: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#d9eadf",
-    marginBottom: 28
-  },
-  brandGlyph: {
-    color: "#245a43",
-    fontSize: 23,
-    fontWeight: "800"
-  },
+  topRow: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, zIndex: 1 },
+  welcomeAction: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingRight: spacing.sm },
+  welcomeText: { ...typography.bodyStrong, color: colors.text },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  wordmark: { ...typography.sectionTitle, color: colors.primary, fontSize: 20 },
+  intro: { minHeight: 210, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.lg, zIndex: 1 },
+  introCompact: { minHeight: 150, paddingVertical: spacing.sm },
+  introCopy: { flex: 1, minWidth: 0 },
   title: {
-    color: "#15251b",
-    fontSize: 32,
-    fontWeight: "800",
-    letterSpacing: -0.7
+    ...typography.display,
+    color: colors.text,
+    fontSize: 31,
+    lineHeight: 35
   },
   subtitle: {
-    color: "#5b685f",
+    ...typography.body,
+    color: colors.textSecondary,
     fontSize: 16,
     lineHeight: 24,
-    marginTop: 8
+    marginTop: spacing.sm,
+    zIndex: 1
   },
-  form: {
-    marginTop: 30
-  },
-  footer: {
-    marginTop: 24
-  }
+  illustration: { width: "42%", maxWidth: 180 },
+  formSurface: { zIndex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, padding: spacing.xl },
+  formTitle: { ...typography.screenTitle, color: colors.text, marginBottom: spacing.lg },
+  form: { zIndex: 1 },
+  footer: { marginTop: spacing.xl, zIndex: 1 }
 });
