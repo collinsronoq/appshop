@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import { AppShellProvider, AppTopBar, BackHeader, ModalSheet } from "./components";
+import { AppShellProvider, AppTopBar, BackHeader, ModalSheet, PrimaryButton } from "./components";
 
 describe("AppTopBar", () => {
   it("renders the root identity and global actions", () => {
@@ -41,5 +41,12 @@ describe("ModalSheet", () => {
     fireEvent.press(screen.getByLabelText("Close modal"));
 
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("PrimaryButton", () => {
+  it("allows essential labels to grow instead of forcing one-line truncation", () => {
+    render(<PrimaryButton label="Choose from catalogue" onPress={() => undefined} />);
+    expect(screen.getByText("Choose from catalogue").props.numberOfLines).toBeUndefined();
   });
 });

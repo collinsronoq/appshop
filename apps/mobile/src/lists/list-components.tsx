@@ -2,11 +2,11 @@ import Feather from "@expo/vector-icons/Feather";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, iconSizes, radius, spacing, typography } from "../design/theme";
-import { SurfaceCard } from "../design/components";
+import { Badge, PrimaryButton, SurfaceCard } from "../design/components";
 import { formatQuantity, formatSize } from "../design/format";
 import type { ShoppingList, ShoppingListItem } from "./types";
 import type { ShoppingTrip } from "../trips/types";
-import { ListArtwork, ProductArtwork } from "../products/product-images";
+import { ProductArtwork } from "../products/product-images";
 
 export function formatUpdated(value: string) {
   const date = new Date(value);
@@ -38,22 +38,24 @@ export function ShoppingListCard({
     <SurfaceCard style={[styles.listCard, archived ? styles.archivedCard : null]}>
       <Pressable accessibilityRole="button" onPress={onOpen} style={({ pressed }) => [styles.cardPress, pressed ? styles.pressed : null]}>
         <View style={styles.cardHeader}>
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.listArtwork}><ListArtwork items={list.items} name={list.name} /></View>
           <View style={styles.flex}>
-            <Text numberOfLines={1} style={styles.listName}>{list.name}</Text>
-            <Text style={styles.meta}>{list.item_count} item{list.item_count === 1 ? "" : "s"} · {formatUpdated(list.updated_at)}</Text>
+            <View style={styles.titleRow}>
+              <Text numberOfLines={2} style={styles.listName}>{list.name}</Text>
+              <Badge label={activeTrip ? "In progress" : archived ? "Archived" : "Active"} tone={activeTrip ? "success" : "neutral"} />
+            </View>
+            <Text style={styles.meta}>{list.item_count} item{list.item_count === 1 ? "" : "s"}</Text>
           </View>
-          <Feather color={colors.textSecondary} name="chevron-right" size={iconSizes.md} />
+          <Feather color={colors.textTertiary} name="more-horizontal" size={iconSizes.md} />
         </View>
         {activeTrip ? (
           <View style={styles.activeSummary}>
-            <View style={styles.activeLabel}><Feather color={colors.success} name="shopping-cart" size={16} /><Text style={styles.activeText}>Shopping in progress</Text></View>
-            <Text style={styles.meta}>{activeTrip.progress.collected} of {activeTrip.progress.total} collected</Text>
+            <View style={styles.progressCopy}><Text style={styles.activeText}>{activeTrip.progress.collected} of {activeTrip.progress.total} collected</Text><Text style={styles.percent}>{Math.round(progress * 100)}%</Text></View>
             <View accessibilityLabel={`${Math.round(progress * 100)} percent collected`} accessibilityRole="progressbar" style={styles.track}><View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} /></View>
           </View>
         ) : null}
+        <View style={styles.cardFooter}><View style={styles.updated}><Feather color={colors.textTertiary} name="clock" size={15} /><Text style={styles.updatedText}>{formatUpdated(list.updated_at)}</Text></View>{!activeTrip ? <View style={styles.openLabel}><Text style={styles.openText}>Open</Text><Feather color={colors.text} name="arrow-right" size={15} /></View> : null}</View>
       </Pressable>
-      {activeTrip && onContinue ? <Pressable accessibilityRole="button" onPress={onContinue} style={({ pressed }) => [styles.continueButton, pressed ? styles.pressed : null]}><Text style={styles.continueText}>Continue</Text><Feather color={colors.surface} name="arrow-right" size={16} /></Pressable> : null}
+      {activeTrip && onContinue ? <PrimaryButton compact label="Resume trip" icon="arrow-right" onPress={onContinue} style={styles.continueButton} /> : null}
     </SurfaceCard>
   );
 }
@@ -80,20 +82,25 @@ export function EmptyArchived() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.76 },
-  listCard: { padding: spacing.md },
+  listCard: { padding: spacing.md, borderRadius: radius.lg },
   archivedCard: { opacity: 0.78 },
-  cardPress: { gap: spacing.sm },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  listArtwork: { width: 52, height: 52, overflow: "hidden", borderRadius: radius.md, backgroundColor: colors.primarySubtle },
-  listName: { ...typography.cardTitle, color: colors.text, fontSize: 17 },
+  cardPress: { gap: spacing.md },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  titleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
+  listName: { ...typography.cardTitle, color: colors.text, fontSize: 17, flex: 1, minWidth: 0 },
   meta: { ...typography.secondary, color: colors.textSecondary, marginTop: spacing.xs },
-  activeSummary: { backgroundColor: colors.primarySubtle, borderRadius: radius.md, padding: spacing.md },
-  activeLabel: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  activeText: { ...typography.secondary, color: colors.success, fontWeight: "800" },
-  track: { height: 7, overflow: "hidden", backgroundColor: "#C6D5C9", borderRadius: radius.round, marginTop: spacing.sm },
+  activeSummary: { gap: spacing.xs },
+  progressCopy: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  activeText: { ...typography.caption, color: colors.success },
+  percent: { ...typography.caption, color: colors.textSecondary },
+  track: { height: 6, overflow: "hidden", backgroundColor: colors.primaryMuted, borderRadius: radius.round },
   fill: { height: "100%", backgroundColor: colors.success, borderRadius: radius.round },
-  continueButton: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.md, marginTop: spacing.md },
-  continueText: { ...typography.bodyStrong, color: colors.surface },
+  cardFooter: { minHeight: 36, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  updated: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  updatedText: { ...typography.secondary, color: colors.textSecondary, flexShrink: 1 },
+  openLabel: { minHeight: 36, flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.sm, backgroundColor: colors.surfaceSubtle, paddingHorizontal: spacing.sm },
+  openText: { ...typography.caption, color: colors.text },
+  continueButton: { marginTop: spacing.xs },
   itemRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   itemIcon: { width: 44, height: 44, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },
   itemName: { ...typography.cardTitle, color: colors.text },

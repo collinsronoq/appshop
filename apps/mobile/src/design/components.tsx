@@ -122,7 +122,7 @@ export function AppTopBar({
   return (
     <View accessibilityRole="header" style={styles.topBar}>
       {variant === "nested" ? <Pressable accessibilityLabel="Go back" accessibilityRole="button" disabled={!onBack} onPress={onBack} style={styles.topBarAction}><Feather color={colors.text} name="arrow-left" size={iconSizes.md} /></Pressable> : null}
-      {variant === "root" ? <View style={styles.identityRow}><BrandMark size={34} /><Text style={styles.appIdentity}>AppShop</Text></View> : <Text ellipsizeMode="tail" numberOfLines={1} style={styles.nestedTitle}>{title ?? "AppShop"}</Text>}
+      {variant === "root" ? <View style={styles.identityRow}><BrandMark size={38} /><View style={styles.identityCopy}><Text style={styles.appIdentity}>AppShop</Text><Text numberOfLines={1} style={styles.appTagline}>Household pantry</Text></View></View> : <Text ellipsizeMode="tail" numberOfLines={1} style={styles.nestedTitle}>{title ?? "AppShop"}</Text>}
       {variant === "nested" && right ? <View style={styles.topBarRight}>{right}</View> : showActions ? <View style={styles.topBarActions}>
         <Pressable accessibilityLabel="Open notifications" accessibilityRole="button" onPress={onNotifications} style={styles.topBarAction}>
           <Feather color={colors.primary} name="bell" size={iconSizes.md} />
@@ -242,6 +242,10 @@ export function SurfaceCard({ children, style, accessibilityLabel }: PropsWithCh
   return <View accessibilityLabel={accessibilityLabel} style={[styles.card, style]}>{children}</View>;
 }
 
+export function Badge({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "success" | "warning" | "error" | "info" }) {
+  return <View style={[styles.badge, tone === "success" ? styles.badgeSuccess : tone === "warning" ? styles.badgeWarning : tone === "error" ? styles.badgeError : tone === "info" ? styles.badgeInfo : null]}><Text style={[styles.badgeText, tone === "success" ? styles.badgeSuccessText : tone === "warning" ? styles.badgeWarningText : tone === "error" ? styles.badgeErrorText : tone === "info" ? styles.badgeInfoText : null]}>{label}</Text></View>;
+}
+
 export function InlineError({ message = "Couldn't load this section.", onRetry }: { message?: string; onRetry?: () => void }) {
   return (
     <View accessibilityRole="alert" style={styles.inlineState}>
@@ -290,7 +294,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   screenContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.huge, flexGrow: 1 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.lg },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginTop: spacing.sm, marginBottom: spacing.lg },
   backHeader: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm },
   backButton: { width: touchTargets.minimum, height: touchTargets.minimum, alignItems: "center", justifyContent: "center" },
   backButtonPlaceholder: { width: touchTargets.comfortable, height: touchTargets.comfortable },
@@ -299,9 +303,11 @@ const styles = StyleSheet.create({
   brandLeaf: { position: "absolute", width: 8, height: 5, top: 3, right: 5, borderTopLeftRadius: 8, borderBottomRightRadius: 8, backgroundColor: colors.sage },
   pattern: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden", opacity: 0.11 },
   patternIcon: { position: "absolute" },
-  topBar: { minHeight: 62, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, marginBottom: spacing.xs, paddingHorizontal: spacing.xl, backgroundColor: colors.appBarBackground, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.appBarBorder },
-  identityRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  appIdentity: { ...typography.sectionTitle, color: colors.primary, fontSize: 21, lineHeight: 26 },
+  topBar: { minHeight: 66, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.xs, paddingHorizontal: spacing.md, backgroundColor: colors.appBarBackground, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.appBarBorder },
+  identityRow: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  identityCopy: { flex: 1, minWidth: 0 },
+  appIdentity: { ...typography.h2, color: colors.primary, fontSize: 21, lineHeight: 24 },
+  appTagline: { ...typography.overline, color: colors.textTertiary, letterSpacing: 0.6 },
   nestedTitle: { ...typography.cardTitle, color: colors.text, flex: 1, minWidth: 0 },
   nestedAction: { alignSelf: "flex-end", marginBottom: spacing.sm },
   topBarActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
@@ -311,7 +317,7 @@ const styles = StyleSheet.create({
   topBarAvatar: { width: 38, height: 38, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
   topBarAvatarText: { ...typography.caption, color: colors.surface, fontWeight: "800" },
   notificationBadge: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: radius.round, backgroundColor: colors.warning },
-  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(20,38,29,.28)" },
+  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: colors.surfaceScrim },
   modalSheet: { gap: spacing.md, backgroundColor: colors.background, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, paddingBottom: spacing.xxxl },
   modalSheetHeader: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
   modalSheetTitle: { ...typography.sectionTitle, color: colors.text, flex: 1 },
@@ -322,21 +328,31 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.sectionTitle, color: colors.text },
   sectionAction: { minHeight: touchTargets.minimum, justifyContent: "center", paddingLeft: spacing.lg },
   sectionActionText: { ...typography.secondary, color: colors.primary, fontWeight: "700" },
-  button: { minHeight: 52, paddingHorizontal: spacing.lg, borderRadius: radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
-  compactButton: { minHeight: touchTargets.minimum, paddingHorizontal: spacing.md },
+  button: { minHeight: 52, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
+  compactButton: { minHeight: touchTargets.minimum, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   fullWidth: { alignSelf: "stretch" },
   primaryButton: { backgroundColor: colors.primary },
   secondaryButton: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong },
   dangerButton: { backgroundColor: colors.surface, borderColor: colors.border },
   pressed: { opacity: 0.78 },
   disabled: { opacity: 0.55 },
-  buttonText: { ...typography.bodyStrong, color: colors.primary },
+  buttonText: { ...typography.button, color: colors.primary, flexShrink: 1, textAlign: "center" },
   primaryButtonText: { color: colors.surface },
   dangerText: { color: colors.danger },
   tertiaryButton: { minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingHorizontal: spacing.md },
   tertiaryText: { ...typography.bodyStrong, color: colors.primary },
   iconButton: { width: touchTargets.comfortable, height: touchTargets.comfortable, borderRadius: radius.round, alignItems: "center", justifyContent: "center", backgroundColor: colors.primarySubtle },
-  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, ...shadows.card },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.md, padding: spacing.md, ...shadows.card },
+  badge: { alignSelf: "flex-start", maxWidth: "100%", borderRadius: radius.round, backgroundColor: colors.surfaceSubtle, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  badgeText: { ...typography.caption, color: colors.textSecondary, textAlign: "center" },
+  badgeSuccess: { backgroundColor: colors.successLight },
+  badgeSuccessText: { color: colors.success },
+  badgeWarning: { backgroundColor: colors.warningLight },
+  badgeWarningText: { color: colors.warning },
+  badgeError: { backgroundColor: colors.errorLight },
+  badgeErrorText: { color: colors.error },
+  badgeInfo: { backgroundColor: colors.infoLight },
+  badgeInfoText: { color: colors.info },
   inlineState: { minHeight: touchTargets.comfortable, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm },
   inlineErrorText: { ...typography.secondary, color: colors.textSecondary, flex: 1 },
   retry: { ...typography.bodyStrong, color: colors.primary, paddingVertical: spacing.sm },
@@ -346,7 +362,7 @@ const styles = StyleSheet.create({
   emptyTitle: { ...typography.cardTitle, color: colors.text },
   emptyBody: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
   emptyAction: { alignSelf: "stretch", marginTop: spacing.lg },
-  switcher: { alignSelf: "flex-start", maxWidth: "90%", minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md },
+  switcher: { alignSelf: "flex-start", maxWidth: "100%", minHeight: touchTargets.minimum, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.round, paddingHorizontal: spacing.md },
   switcherText: { ...typography.bodyStrong, color: colors.text, flexShrink: 1 },
   quickAction: { flex: 1, minHeight: 88, alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.sm },
   quickIcon: { width: 38, height: 38, borderRadius: radius.round, backgroundColor: colors.primarySubtle, alignItems: "center", justifyContent: "center" },

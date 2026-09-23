@@ -2,6 +2,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { Tabs } from "expo-router";
 import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, typography } from "../../../src/design/theme";
 import { TAB_ITEMS } from "../../../src/navigation/tabs";
@@ -11,6 +12,7 @@ function TabIcon({ name, color, focused }: { name: (typeof TAB_ITEMS)[number]["i
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -18,13 +20,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarHideOnKeyboard: true,
-        tabBarLabelStyle: { ...typography.caption, fontWeight: "600" },
+        tabBarLabelStyle: { ...typography.caption, fontSize: 11, lineHeight: 14, fontWeight: "600" },
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          minHeight: 68,
-          paddingTop: 7
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 6)
         }
       }}
     >
