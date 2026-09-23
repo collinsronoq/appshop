@@ -27,6 +27,10 @@ jest.mock("expo-notifications", () => ({
   addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
   getLastNotificationResponseAsync: jest.fn()
 }));
+jest.mock("react-native-safe-area-context", () => {
+  const actual = jest.requireActual("react-native-safe-area-context");
+  return { ...actual, useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }) };
+});
 jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(), setItemAsync: jest.fn(), deleteItemAsync: jest.fn(),
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: "WHEN_UNLOCKED_THIS_DEVICE_ONLY"
@@ -196,7 +200,9 @@ describe("push notification lifecycle", () => {
       resolved_by_user_id: user.id, resolved_at: "2026-09-09T10:01:00Z"
     });
     wrapper(new FakeClient(), <ShoppingModeScreen tripId="trip-1" substitutionId="substitution-1" />);
-    expect(await screen.findByText("Replacement approved")).toBeTruthy();
+    expect(await screen.findByText("Approved")).toBeTruthy();
+    expect(screen.getByText("Mark collected")).toBeTruthy();
+    expect(screen.getByText("Unavailable")).toBeTruthy();
     expect(screen.queryByText("Approve")).toBeNull();
     expect(pushNotificationApi.getSubstitution).toHaveBeenCalledWith("household-b", "substitution-1");
   });

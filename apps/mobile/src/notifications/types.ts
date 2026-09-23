@@ -26,6 +26,7 @@ export type SubstitutionRequest = {
   shopping_trip_id: string;
   trip_item_id: string;
   requested_by_user_id: string;
+  proposed_product_id?: string | null;
   proposed_name: string;
   proposed_brand: string | null;
   proposed_variant: string | null;
@@ -34,4 +35,6 @@ export type SubstitutionRequest = {
   status: "pending" | "approved" | "rejected" | "cancelled";
   resolved_by_user_id: string | null;
   resolved_at: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
